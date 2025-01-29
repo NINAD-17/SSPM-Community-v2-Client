@@ -1,13 +1,11 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 // Initial States
 const initialState = {
     user: null,
-    state: "idle",
-    error: null,
+    status: 'idle',
+    error: null
 };
-
-// Async Actions
 
 // Slice
 const userSlice = createSlice({
@@ -15,24 +13,21 @@ const userSlice = createSlice({
     initialState,
     reducers: {
         // User Login
-        setUser(state, action) {
+        setUser: (state, action) => {
             state.user = action.payload;
-            state.state = "succeeded";
+            state.status = 'succeeded';
+            state.error = null;
         },
         // User Logout
-        clearUser(state) {
+        clearUser: (state) => {
             state.user = null;
-            state.state = "succeeded";
-        },
-        // Error Handling
-        setError(state, action) {
-            state.error = action.payload;
-            state.state = "failed";
+            state.status = 'idle';
+            state.error = null;
         },
     },
 });
 
-export const { setUser, clearUser, setError } = userSlice.actions;
+export const { setUser, clearUser } = userSlice.actions;
 
 export default userSlice.reducer;
 

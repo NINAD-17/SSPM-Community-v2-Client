@@ -17,40 +17,38 @@ const initialState = {
 
 // Async Actions
 export const login = createAsyncThunk(
-    "user/login", 
+    "auth/login",
     async (credentials, { dispatch, rejectWithValue }) => {
         try {
-            const data = await loginUser(credentials);
-            dispatch(setUser(data.user));
-            return data;
+            const response = await loginUser(credentials);
+            dispatch(setUser(response.data.user));
+            return response.data;
         } catch (error) {
-            // Clear any existing user data on login failure
-            dispatch(clearUser());
             return rejectWithValue(error.response?.data || 'Login failed');
         }
     }
 );
 
 export const register = createAsyncThunk(
-    "user/register", 
+    "auth/register", 
     async (userData, { dispatch, rejectWithValue }) => {
         try {
-            const data = await registerUser(userData);
-            dispatch(setUser(data.user));
-            return data;
+            const response = await registerUser(userData);
+            dispatch(setUser(response.data.user));
+            return response.data;
         } catch (error) {
-            dispatch(clearUser());
             return rejectWithValue(error.response?.data || 'Registration failed');
         }
     }
 );
 
 export const logout = createAsyncThunk(
-    "user/logout", 
+    "auth/logout",
     async (_, { dispatch, rejectWithValue }) => {
         try {
             await logoutUser();
             dispatch(clearUser());
+            return;
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Logout failed');
         }
@@ -58,14 +56,13 @@ export const logout = createAsyncThunk(
 );
 
 export const fetchUserInfo = createAsyncThunk(
-    "user/fetchUser", 
+    "auth/fetchUserInfo",
     async (_, { dispatch, rejectWithValue }) => {
         try {
-            const data = await verifyAndFetchTokenUser();
-            dispatch(setUser(data.user));
-            return data;
+            const response = await verifyAndFetchTokenUser();
+            dispatch(setUser(response.data.user));
+            return response.data;
         } catch (error) {
-            dispatch(clearUser());
             return rejectWithValue(error.response?.data || 'Failed to fetch user info');
         }
     }
