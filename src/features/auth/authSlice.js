@@ -10,7 +10,8 @@ import { setUser, clearUser } from "../user/userSlice";
 // Initial State
 const initialState = {
     isAuthenticated: false,
-    status: "idle",
+    status: "idle", // For initial auth check
+    actionStatus: "idle", // For login/register actions
     error: null,
 };
 
@@ -79,37 +80,38 @@ const authSlice = createSlice({
         builder
             // Login actions
             .addCase(login.pending, (state) => {
-                state.status = "loading";
+                state.actionStatus = "loading";
+                state.error = null;
             })
             .addCase(login.fulfilled, (state) => {
                 state.isAuthenticated = true;
-                state.status = "succeeded";
+                state.actionStatus = "succeeded";
                 state.error = null;
                 // User state is already handled in the thunk
             })
             .addCase(login.rejected, (state, action) => {
-                state.status = "failed";
+                state.actionStatus = "failed";
                 state.error = action.error.message;
             })
             // Logout Actions
             .addCase(logout.fulfilled, (state) => {
                 state.isAuthenticated = false;
-                state.status = "succeeded";
+                state.actionStatus = "succeeded";
                 state.error = null;
                 // User state is already handled in the thunk
             })
             // Register Actions
             .addCase(register.pending, (state) => {
-                state.status = "loading";
+                state.actionStatus = "loading";
             })
             .addCase(register.fulfilled, (state) => {
                 state.isAuthenticated = true;
-                state.status = "succeeded";
+                state.actionStatus = "succeeded";
                 state.error = null;
                 // User state is already handled in the thunk
             })
             .addCase(register.rejected, (state, action) => {
-                state.status = "failed";
+                state.actionStatus = "failed";
                 state.error = action.error.message;
             })
             // Fetch User Info Actions
