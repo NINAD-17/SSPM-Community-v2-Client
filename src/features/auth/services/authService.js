@@ -1,50 +1,65 @@
 import apiClient from "../../../api/apiClient";
 
-const API_URL = "/v2/users";
+const API_URL = "/v2/auth";
 
-export const loginUser = async (credentials) => {
+export const initiateRegistration = async (email) => {
     console.log(
-        `Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/login`,
-        credentials
+        `Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/registration-initiator`,
+        email
     );
-    const response = await apiClient.post(`${API_URL}/login`, credentials);
+
+    const response = await apiClient.post(`${API_URL}/register/initiate`, { email });
     return response.data;
 };
 
-export const registerUser = async (userData) => {
-    console.log(
-        `Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/register`,
+export const verifyRegistrationOTP = async (otpData) => {
+    const response = await apiClient.post(
+        `${API_URL}/register/verify-otp`,
+        otpData
+    );
+    console.log("data resp = ", response.data);
+    return response.data;
+};
+
+export const completeRegistration = async (userData) => {
+    const response = await apiClient.post(
+        `${API_URL}/register/complete`,
         userData
     );
-    const response = await apiClient.post(`${API_URL}/register`, userData);
+    return response.data;
+};
+
+export const initiateLogin = async (credentials) => {
+    const response = await apiClient.post(`${API_URL}/login/initiate`, credentials);
+    return response.data;
+};
+
+export const verifyLoginOTP = async (otpData) => {
+    const response = await apiClient.post(`${API_URL}/login/verify-otp`, otpData);
     return response.data;
 };
 
 export const logoutUser = async () => {
-    console.log(
-        `Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/logout`
-    );
     await apiClient.post(`${API_URL}/logout`);
     return;
 };
 
 export const verifyAndFetchTokenUser = async () => {
-    console.log(`Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/user`);
     const response = await apiClient.get(`${API_URL}/user`);
     return response.data;
 };
 
 export const refreshAccessToken = async () => {
-    console.log(
-        `Requesting URL: ${apiClient.defaults.baseURL}${API_URL}/refresh-access-token`
-    );
     const response = await apiClient.post(`${API_URL}/refresh-access-token`);
     return response.data;
 };
 
 const authService = {
-    loginUser,
-    registerUser,
+    initiateRegistration,
+    verifyRegistrationOTP,
+    completeRegistration,
+    initiateLogin,
+    verifyLoginOTP,
     logoutUser,
     verifyAndFetchTokenUser,
     refreshAccessToken,

@@ -10,10 +10,11 @@ import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PublicRoute from "./components/common/PublicRoute";
 import { Toaster } from 'sonner';
+// import EditProfile from "./features/user/components/EditProfile";
 
 function App() {
     const dispatch = useDispatch();
-    const { status } = useSelector((state) => state.auth);
+    const { fetchStatus } = useSelector((state) => state.auth);
 
     // Memoize checkAuthentication to prevent recreation on every render
     const checkAuthentication = useCallback(async () => {
@@ -42,7 +43,7 @@ function App() {
         checkAuthentication();
     }, [checkAuthentication]); // Now checkAuthentication is memoized and safe to use in deps
 
-    if (status === "loading") {
+    if (fetchStatus === "loading") {
         return (
             <div className="flex justify-center items-center h-screen">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-800"></div>
@@ -52,26 +53,26 @@ function App() {
 
     return (
         <>
-            <Toaster position="top-right" richColors />
+            <Toaster position="bottom-right" richColors />
             <BrowserRouter>
                 <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Navigate to="/home" replace />} />
-                    <Route 
-                        path="/login" 
+                    <Route
+                        path="/login"
                         element={
                             <PublicRoute>
                                 <LoginPage />
                             </PublicRoute>
-                        } 
+                        }
                     />
-                    <Route 
-                        path="/register" 
+                    <Route
+                        path="/register"
                         element={
                             <PublicRoute>
                                 <RegisterPage />
                             </PublicRoute>
-                        } 
+                        }
                     />
 
                     {/* Protected Routes */}
@@ -83,6 +84,15 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+
+                    {/* <Route
+                        path="/user/edit"
+                        element={
+                            <ProtectedRoute>
+                                <EditProfile />
+                            </ProtectedRoute>
+                        }
+                    /> */}
                 </Routes>
             </BrowserRouter>
         </>

@@ -1,43 +1,86 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
-    loginUser,
-    logoutUser,
-    registerUser,
+    initiateRegistration,
+    verifyRegistrationOTP,
+    completeRegistration,
+    initiateLogin,
+    verifyLoginOTP,
     verifyAndFetchTokenUser,
+    logoutUser,
 } from "./services/authService";
 import { setUser, clearUser } from "../user/userSlice";
 
 // Initial State
 const initialState = {
     isAuthenticated: false,
-    status: "idle", // For initial auth check
+    fetchStatus: "idle", // For initial auth check
     actionStatus: "idle", // For login/register actions
+    registrationStep: 'email', // email, otp, form
+    loginStep: 'credentials', // credentials, otp
+    verifiedEmail: null,
     error: null,
 };
 
 // Async Actions
-export const login = createAsyncThunk(
-    "auth/login",
-    async (credentials, { dispatch, rejectWithValue }) => {
+export const registerInit = createAsyncThunk(
+    "auth/registerInit",
+    async(email, { rejectWithValue}) => {
         try {
-            const response = await loginUser(credentials);
+            const response = await initiateRegistration(email);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || "Initiation Failed")
+        }
+    }
+)
+
+export const registerVerifyOTP = createAsyncThunk(
+    "auth/registerVerifyOTP",
+    async (otpData, { rejectWithValue }) => {
+        try {
+            const response = await verifyRegistrationOTP(otpData);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || "Verification Failed")
+        }
+    });
+
+export const registerComplete = createAsyncThunk(
+    "auth/registerComplete",
+    async (userData, { dispatch, rejectWithValue }) => {
+        try {
+            const response = await completeRegistration(userData);
             dispatch(setUser(response.data.user));
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Login failed');
+            return rejectWithValue(
+                error.response?.data || "Registration failed"
+            );
         }
     }
 );
 
-export const register = createAsyncThunk(
-    "auth/register", 
-    async (userData, { dispatch, rejectWithValue }) => {
+export const loginInit = createAsyncThunk(
+    "auth/loginInit",
+    async (credentials, { rejectWithValue }) => {
         try {
-            const response = await registerUser(userData);
+            const response = await initiateLogin(credentials);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response?.data || 'Login initiation failed');
+        }
+    }
+);
+
+export const loginVerifyOTP = createAsyncThunk(
+    "auth/loginVerifyOTP",
+    async (otpData, { dispatch, rejectWithValue }) => {
+        try {
+            const response = await verifyLoginOTP(otpData);
             dispatch(setUser(response.data.user));
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Registration failed');
+            return rejectWithValue(error.response?.data || 'OTP verification failed');
         }
     }
 );
@@ -72,60 +115,104 @@ export const fetchUserInfo = createAsyncThunk(
 const authSlice = createSlice({
     name: "auth",
     initialState,
-    reducers: {},
+    reducers: {
+        resetAuth: (state) => {
+            state.registrationStep = 'email';
+            state.loginStep = 'credentials';
+            state.verifiedEmail = null;
+            state.error = null;
+            state.actionStatus = 'idle';
+        },
+    },
     extraReducers: (builder) => {
         builder
-            // Login actions
-            .addCase(login.pending, (state) => {
+            // Registration Flow
+            .addCase(registerInit.pending, (state) => {
                 state.actionStatus = "loading";
                 state.error = null;
             })
-            .addCase(login.fulfilled, (state) => {
-                state.isAuthenticated = true;
+            .addCase(registerInit.fulfilled, (state, action) => {
                 state.actionStatus = "succeeded";
+                state.registrationStep = 'otp';
+                state.verifiedEmail = action.payload.email;
                 state.error = null;
-                // User state is already handled in the thunk
             })
-            .addCase(login.rejected, (state, action) => {
+            .addCase(registerInit.rejected, (state, action) => {
                 state.actionStatus = "failed";
-                state.error = action.error.message;
+                state.error = action.payload || action.error.message;
             })
-            // Logout Actions
-            .addCase(logout.fulfilled, (state) => {
-                state.isAuthenticated = false;
-                state.actionStatus = "succeeded";
-                state.error = null;
-                // User state is already handled in the thunk
-            })
-            // Register Actions
-            .addCase(register.pending, (state) => {
+            // Registration OTP Verification
+            .addCase(registerVerifyOTP.pending, (state) => {
                 state.actionStatus = "loading";
+                state.error = null;
             })
-            .addCase(register.fulfilled, (state) => {
+            .addCase(registerVerifyOTP.fulfilled, (state) => {
+                state.actionStatus = "succeeded";
+                state.registrationStep = 'form';
+                state.error = null;
+            })
+            .addCase(registerVerifyOTP.rejected, (state, action) => {
+                state.actionStatus = "failed";
+                state.error = action.payload || action.error.message;
+            })
+            // Registration Completion
+            .addCase(registerComplete.pending, (state) => {
+                state.actionStatus = "loading";
+                state.error = null;
+            })
+            .addCase(registerComplete.fulfilled, (state) => {
+                state.actionStatus = "succeeded";
+                state.isAuthenticated = true;
+                state.registrationStep = 'email'; // Reset
+                state.verifiedEmail = null;
+                state.error = null;
+            })
+            .addCase(registerComplete.rejected, (state, action) => {
+                state.actionStatus = "failed";
+                state.error = action.payload || action.error.message;
+            })
+            // Login Flow
+            .addCase(loginInit.pending, (state) => {
+                state.actionStatus = "loading";
+                state.error = null;
+            })
+            .addCase(loginInit.fulfilled, (state, action) => {
+                state.actionStatus = "succeeded";
+                state.loginStep = 'otp';
+                state.verifiedEmail = action.payload.email;
+                state.error = null;
+            })
+            .addCase(loginInit.rejected, (state, action) => {
+                state.actionStatus = "failed";
+                state.error = action.payload || action.error.message;
+            })
+            // Login OTP Verification
+            .addCase(loginVerifyOTP.pending, (state) => {
+                state.actionStatus = "loading";
+                state.error = null;
+            })
+            .addCase(loginVerifyOTP.fulfilled, (state) => {
                 state.isAuthenticated = true;
                 state.actionStatus = "succeeded";
                 state.error = null;
-                // User state is already handled in the thunk
+                state.step = 0; // Reset step after successful login
             })
-            .addCase(register.rejected, (state, action) => {
+            .addCase(loginVerifyOTP.rejected, (state, action) => {
                 state.actionStatus = "failed";
-                state.error = action.error.message;
+                state.error = action.payload || action.error.message;
             })
-            // Fetch User Info Actions
+            // Fetch User Info
             .addCase(fetchUserInfo.pending, (state) => {
-                state.status = "loading";
+                state.fetchStatus = "loading";
             })
             .addCase(fetchUserInfo.fulfilled, (state) => {
                 state.isAuthenticated = true;
-                state.status = "succeeded";
+                state.fetchStatus = "succeeded";
                 state.error = null;
-                // User state is already handled in the thunk
             })
             .addCase(fetchUserInfo.rejected, (state, action) => {
-                state.isAuthenticated = false;
-                state.status = "failed";
+                state.fetchStatus = "failed";
                 state.error = action.error.message;
-                // User state is already handled in the thunk
             });
     },
 });

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../../features/auth/authSlice";
 import * as RadixDropdown from "@radix-ui/react-dropdown-menu";
 import { toast } from "sonner";
+import defaultAvatar from "../../assets/user.png"; // Import the default avatar
 
 function Navbar() {
     const dispatch = useDispatch();
@@ -12,13 +13,13 @@ function Navbar() {
     const [isProfileClicked, setIsProfileClicked] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const { user } = useSelector((state) => state.user);
-    const { status } = useSelector((state) => state.auth);
+    const { actionStatus, fetchStatus } = useSelector((state) => state.auth);
 
     // For debugging
     useEffect(() => {
         console.log('Current user:', user);
-        console.log('Auth status:', status);
-    }, [user, status]);
+        console.log('Auth status:', actionStatus, fetchStatus);
+    }, [user, actionStatus, fetchStatus]);
 
     const handleLogout = async () => {
         try {
@@ -56,6 +57,22 @@ function Navbar() {
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, []);
+
+    const ProfileImage = () => {
+        const { user } = useSelector((state) => state.user);
+        
+        return (
+            <img
+                src={user?.avatar || defaultAvatar}
+                alt="Profile"
+                className="h-6 w-6 rounded-full object-cover border border-slate-300 hover:border-blue-500"
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = defaultAvatar;
+                }}
+            />
+        );
+    };
 
     return (
         <nav className="fixed top-0 z-10 bg-white w-full h-16 flex justify-between items-center p-6 border-b border-blue-200">
@@ -108,31 +125,14 @@ function Navbar() {
                     >
                         {isProfileClicked ? (
                             <>
-                                <div className="flex flex-col items-center justify-center ml-2">
-                                    <span className="material-symbols-outlined text-2xl h-6 hover:text-blue-400">
-                                        close
-                                    </span>
-                                    <h3 className="text-xs xl:text-sm mt-0.5 hover:text-blue-400">
-                                        Close
-                                    </h3>
-                                </div>
-                                <div className="absolute bg-white border-blue-200 border w-56 top-16 right-1 rounded-md px-4 shadow-lg">
-                                    <h2 className="text-center font-semibold mt-2">{`${user.firstName} ${user.lastName}`}</h2>
-                                    <button
-                                        className="w-full bg-blue-400 text-sm py-2 font-semibold rounded-xl mt-3 mb-3 text-white hover:bg-red-500"
-                                        onClick={handleLogout}
-                                    >
-                                        Log Out
-                                    </button>
-                                </div>
+                                <ProfileImage />
+                                <h3 className="text-xs xl:text-sm mt-0.5 hover:text-blue-400">
+                                    Close
+                                </h3>
                             </>
                         ) : (
                             <>
-                                <img
-                                    className={`h-6 w-6 rounded-full border object-cover ${isProfileHover ? "border-blue-500" : ""}`}
-                                    src={`${user !== null && user.avatar ? user.avatar : "../../assets/user.png"}`}
-                                    alt=""
-                                />
+                                <ProfileImage />
                                 <h3 className="text-xs xl:text-sm mt-0.5 hover:text-blue-400">
                                     Profile
                                 </h3>

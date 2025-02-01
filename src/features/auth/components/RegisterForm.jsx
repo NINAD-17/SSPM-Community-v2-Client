@@ -1,52 +1,175 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { register } from "../authSlice";
+import { registerInit, registerVerifyOTP, registerComplete } from "../authSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from 'sonner';
 
 const RegisterForm = () => {
-    const [fname, setFname] = useState("");
-    const [lname, setLname] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [gradYear, setGradYear] = useState("");
-    const [branch, setBranch] = useState("");
-    const currYear = new Date().getFullYear();
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { status, error } = useSelector((state) => state.user);
+    const currentYear = new Date().getFullYear();
+    const { 
+        registrationStep, 
+        verifiedEmail, 
+        actionStatus, 
+        error 
+    } = useSelector((state) => state.auth);
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    // Email Step State
+    const [email, setEmail] = useState("");
+    
+    // OTP Step State
+    const [otp, setOtp] = useState("");
+    
+    // Form Step State
+    const [formData, setFormData] = useState({
+        firstName: "",
+        lastName: "",
+        password: "",
+        graduationYear: "",
+        branch: "",
+    });
+
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
         try {
-            await dispatch(
-                register({
-                    firstName: fname,
-                    lastName: lname,
-                    email,
-                    password,
-                    graduationYear: gradYear,
-                    branch,
-                })
-            ).unwrap();
-            toast.success('Registration successful!');
-            navigate("/home");
+            await dispatch(registerInit(email)).unwrap();
+            toast.success('OTP sent successfully!');
         } catch (err) {
-            toast.error(err?.message || 'Registration failed. Please try again.');
-            console.error(err);
+            toast.error(err.message || 'Failed to send OTP');
         }
     };
 
+    const handleOTPSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await dispatch(registerVerifyOTP({ email: verifiedEmail, otp })).unwrap();
+            toast.success('Email verified successfully!');
+        } catch (err) {
+            toast.error(err.message || 'OTP verification failed');
+        }
+    };
+
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await dispatch(registerComplete({ 
+                ...formData, 
+                email: verifiedEmail 
+            })).unwrap();
+            toast.success('Registration successful!');
+            navigate('/home');
+        } catch (err) {
+            toast.error(err.message || 'Registration failed');
+        }
+    };
+
+    if (registrationStep === 'email') {
+        return (
+            <div className="flex flex-col gap-8 justify-center items-center min-h-screen">
+                <div>
+                    <p className="text-2xl text-slate-700">Register to</p>
+                    <h1 className="text-4xl font-extrabold text-blue-800 md:text-5xl">
+                        SSPM COMMUNITY
+                    </h1>
+                </div>
+                <div className="p-4 bg-blue-100 rounded-xl w-full max-w-md">
+                    <form onSubmit={handleEmailSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">
+                                Email Address
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full p-2 rounded-xl"
+                                placeholder="Enter your email"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={actionStatus === "loading"}
+                            className="w-full p-2 bg-blue-800 text-white rounded-xl"
+                        >
+                            {actionStatus === "loading" ? (
+                                <div className="flex justify-center items-center">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                                </div>
+                            ) : (
+                                "Send OTP"
+                            )}
+                        </button>
+                        <p className="text-sm text-gray-500 cursor-pointer text-center mt-2">
+                            Already a user?{" "}
+                            <span
+                                className="hover:underline text-blue-500 hover:text-blue-600"
+                                onClick={() => navigate("/login")}
+                            >
+                                Login here
+                            </span>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    if (registrationStep === 'otp') {
+        return (
+            <div className="flex flex-col gap-8 justify-center items-center min-h-screen">
+                <div>
+                    <p className="text-2xl text-slate-700">Register to</p>
+                    <h1 className="text-4xl font-extrabold text-blue-800 md:text-5xl">
+                        SSPM COMMUNITY
+                    </h1>
+                </div>
+                <div className="p-4 bg-blue-100 rounded-xl w-full max-w-md">
+                    <form onSubmit={handleOTPSubmit}>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">
+                                Enter OTP
+                            </label>
+                            <input
+                                type="text"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                className="w-full p-2 rounded-xl"
+                                placeholder="Enter OTP"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={actionStatus === "loading"}
+                            className="w-full p-2 bg-blue-800 text-white rounded-xl"
+                        >
+                            {actionStatus === "loading" ? (
+                                <div className="flex justify-center items-center">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                                </div>
+                            ) : (
+                                "Verify OTP"
+                            )}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    // Registration Form
     return (
-        <div className="flex flex-col gap-8 justify-center items-center w-full min-h-screen px-4 overflow-auto">
+        <div className="flex flex-col gap-8 justify-center items-center min-h-screen">
             <div>
                 <p className="text-2xl text-slate-700">Register to</p>
                 <h1 className="text-4xl font-extrabold text-blue-800 md:text-5xl">
                     SSPM COMMUNITY
                 </h1>
             </div>
-            <div className="p-4 bg-blue-100 rounded-xl w-full sm:w-2/3 md:w-3/5 lg:w-96">
-                <form onSubmit={handleSubmit}>
+            <div className="p-4 bg-blue-100 rounded-xl w-full max-w-md">
+                <form onSubmit={handleFormSubmit}>
                     <div className="flex flex-col sm:flex-row gap-5">
                         <div>
                             <label
@@ -58,12 +181,16 @@ const RegisterForm = () => {
                             <input
                                 type="text"
                                 name="fname"
-                                value={fname}
-                                onChange={(event) =>
-                                    setFname(event.target.value)
+                                value={formData.firstName}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        firstName: e.target.value,
+                                    })
                                 }
+                                className="w-full p-2 rounded-xl"
+                                required
                                 placeholder="First Name"
-                                className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
                             />
                         </div>
                         <div>
@@ -76,31 +203,20 @@ const RegisterForm = () => {
                             <input
                                 type="text"
                                 name="lname"
-                                value={lname}
-                                onChange={(event) =>
-                                    setLname(event.target.value)
+                                value={formData.lastName}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        lastName: e.target.value,
+                                    })
                                 }
+                                className="w-full p-2 rounded-xl"
+                                required
                                 placeholder="Last Name"
-                                className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
                             />
                         </div>
                     </div>
-                    <div>
-                        <label
-                            htmlFor="email"
-                            className="block text-sm font-medium mb-2 lg:text-md"
-                        >
-                            Your Email
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
-                            placeholder="Enter your email"
-                        />
-                    </div>
+
                     <div>
                         <label
                             htmlFor="password"
@@ -111,9 +227,12 @@ const RegisterForm = () => {
                         <input
                             type="password"
                             name="password"
-                            value={password}
-                            onChange={(event) =>
-                                setPassword(event.target.value)
+                            value={formData.password}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    password: e.target.value,
+                                })
                             }
                             className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
                             placeholder="Create a strong password (min 8 characters)"
@@ -129,8 +248,13 @@ const RegisterForm = () => {
                         <input
                             type="text"
                             name="branch"
-                            value={branch}
-                            onChange={(event) => setBranch(event.target.value)}
+                            value={formData.branch}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    branch: e.target.value,
+                                })
+                            }
                             className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
                             placeholder="Enter your Branch - Computer Engineering"
                         />
@@ -146,41 +270,32 @@ const RegisterForm = () => {
                             type="number"
                             name="gradYear"
                             min={2000}
-                            max={currYear + 4}
-                            value={gradYear}
-                            onChange={(event) =>
-                                setGradYear(event.target.value)
+                            max={currentYear + 4}
+                            value={formData.graduationYear}
+                            onChange={(e) =>
+                                setFormData({
+                                    ...formData,
+                                    graduationYear: e.target.value,
+                                })
                             }
                             className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
-                            placeholder={currYear}
+                            placeholder={currentYear}
                         />
                     </div>
                     <button
                         type="submit"
-                        disabled={status === "loading"}
-                        className={`w-full p-2 rounded-xl mt-7 text-white 
-                            ${status === "loading" 
-                                ? "bg-blue-400 cursor-not-allowed" 
-                                : "bg-blue-800 hover:bg-blue-500"
-                            }`}
+                        disabled={actionStatus === "loading"}
+                        className="w-full p-2 bg-blue-800 text-white rounded-xl"
                     >
-                        {status === "loading" ? (
+                        {actionStatus === "loading" ? (
                             <div className="flex justify-center items-center">
                                 <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
                             </div>
                         ) : (
-                            "Register"
+                            "Complete Registration"
                         )}
                     </button>
-                    <p className="text-sm text-gray-500 cursor-pointer text-center mt-2">
-                        Already a user?{" "}
-                        <span
-                            className="hover:underline text-blue-500 hover:text-blue-600"
-                            onClick={() => navigate("/login")}
-                        >
-                            Login here
-                        </span>
-                    </p>
+                    
                 </form>
             </div>
         </div>

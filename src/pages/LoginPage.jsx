@@ -1,11 +1,12 @@
 import React from "react";
 import LoginForm from "../features/auth/components/LoginForm";
+import Layout from "../components/layout/Layout";
 
 const LoginPage = () => {
     return (
-        <div>
+        <Layout showNavbar={false}>
             <LoginForm />
-        </div>
+        </Layout>
     );
 };
 
