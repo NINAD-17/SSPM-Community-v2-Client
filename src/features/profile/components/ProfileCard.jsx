@@ -1,14 +1,14 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { academicYearCalc } from "../../../utils/academicYear";
 
 const ProfileCard = ({ userId }) => {
     const navigate = useNavigate();
     const loggedInUser = useSelector((state) => state.user.user);
-    const users = useSelector((state) => state.users?.users); // We'll need a users slice later
-    
-    // Get the user to display (either logged in user or other user)
-    const user = userId === loggedInUser?._id ? loggedInUser : users?.find(u => u._id === userId);
+    const profile = useSelector((state) => state.profile.profile);
+    const profileStatus = useSelector((state) => state.profile.status);
+
+    const user = userId === loggedInUser?._id ? loggedInUser : profile;
 
     if (!user) {
         return (
@@ -27,7 +27,9 @@ const ProfileCard = ({ userId }) => {
         avatar, // Changed from picturePath to match our current state
         status,
         branch,
-        gradYear,
+        role,
+        isAlumni,
+        graduationYear
     } = user;
 
     return (
@@ -39,7 +41,7 @@ const ProfileCard = ({ userId }) => {
             />
             <h2
                 className="text-xl font-semibold mt-2 text-center hover:underline sm:text-lg lg:text-xl cursor-pointer"
-                onClick={() => navigate(`/profile/${userId}`)}
+                onClick={() => navigate(`/user/profile/${userId}`)}
             >
                 {`${firstName} ${lastName}`}
             </h2>
@@ -50,13 +52,13 @@ const ProfileCard = ({ userId }) => {
             <div className="text-base sm:text-sm lg:text-base space-y-0">
                 <div className="flex justify-between">
                     <p className="text-gray-700">Status </p>
-                    <p className="font-semibold text-gray-700">{status}</p>
+                    <p className="font-semibold text-gray-700">{ role === "student" && isAlumni ? "Alumni": "Student"}</p>
                 </div>
                 {status === "Student" && (
                     <div className="flex justify-between">
                         <p className="text-gray-700">Currently In </p>
                         <p className="font-semibold text-gray-700">
-                            {academicYearCalc(gradYear)} Year
+                            {academicYearCalc(graduationYear)} Year
                         </p>
                     </div>
                 )}
@@ -66,7 +68,7 @@ const ProfileCard = ({ userId }) => {
                 </div>
                 <div className="flex justify-between">
                     <p className="text-gray-700">Graduation Year </p>
-                    <p className="font-semibold text-gray-700">{gradYear}</p>
+                    <p className="font-semibold text-gray-700">{graduationYear}</p>
                 </div>
             </div>
             <hr className="border-blue-400 my-2" />
@@ -110,9 +112,7 @@ const ProfileCard = ({ userId }) => {
             ) : (
                 <div className="flex justify-center items-center text-blue-700 hover:text-blue-400">
                     {/* Friend functionality will be added later */}
-                    <button
-                        className="w-full bg-blue-800 p-2 rounded-xl mt-3 text-white hover:bg-blue-500 flex space-x-2 justify-center"
-                    >
+                    <button className="w-full bg-blue-800 p-2 rounded-xl mt-3 text-white hover:bg-blue-500 flex space-x-2 justify-center">
                         <p>Add as a Friend</p>
                         <span className="material-symbols-outlined">
                             person_add

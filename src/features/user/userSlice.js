@@ -33,6 +33,7 @@ export const updateAvatar = createAsyncThunk(
                 throw new Error('No user data received');
             }
             return response.data;
+
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to update avatar");
         }
@@ -77,10 +78,7 @@ const userSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateAvatar.fulfilled, (state, action) => {
-                state.user = {
-                    ...state.user,
-                    avatar: action.payload.user.avatar
-                };
+                state.user = action.payload.user;
                 state.status = 'succeeded';
                 state.error = null;
             })
@@ -94,4 +92,5 @@ const userSlice = createSlice({
 export const { setUser, clearUser } = userSlice.actions;
 
 export default userSlice.reducer;
+
 

@@ -10,7 +10,9 @@ import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PublicRoute from "./components/common/PublicRoute";
 import { Toaster } from 'sonner';
-// import EditProfile from "./features/user/components/EditProfile";
+import EditProfile from "./features/user/components/EditProfile";
+import ProfilePage from "./pages/ProfilePage";
+import UserNetwork from "./pages/UserNetwork";
 
 function App() {
     const dispatch = useDispatch();
@@ -85,14 +87,32 @@ function App() {
                         }
                     />
 
-                    {/* <Route
+                    <Route
                         path="/user/edit"
                         element={
                             <ProtectedRoute>
                                 <EditProfile />
                             </ProtectedRoute>
                         }
-                    /> */}
+                    />
+
+                    <Route
+                        path="/user/profile/:userId"
+                        element={
+                            <ProtectedRoute>
+                                <ProfilePage />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/user/network"
+                        element={
+                            <ProtectedRoute>
+                                <UserNetwork />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Routes>
             </BrowserRouter>
         </>

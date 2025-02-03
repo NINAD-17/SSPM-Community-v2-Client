@@ -1,0 +1,66 @@
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import ProfileCard from "../features/profile/components/ProfileCard";
+import ProfileInfo from "../features/profile/components/ProfileInfo";
+import { clearProfile, fetchUserProfile } from "../features/profile/profileSlice";
+import Layout from "../components/layout/Layout";
+import Posts from "../features/posts/components/Posts";
+// import FriendsList from "../../components/FriendsList";
+// import CreatePostBox from "../../components/CreatePostBox";
+// import ThreeCard from "../../components/ThreeCard";
+
+const ProfilePage = () => {
+    const { userId } = useParams();
+    const dispatch = useDispatch();
+    const loggedInUser = useSelector((state) => state.user);
+    const profile = useSelector((state) => state.profile.profile);
+    const profileStatus = useSelector((state) => state.profile.status);
+   
+    useEffect(() => {
+        dispatch(fetchUserProfile(userId));
+
+        return () => {
+            dispatch(clearProfile());
+        };
+    }, [userId, dispatch]);
+
+    if(!profile) {
+        return <div>Loading...</div>;
+    }
+
+    return (
+        <Layout>
+            <div className="mt-16  bg-blue-50 grid sm:grid-cols-12 mx-auto max-w-7xl gap-3 p-3 sm:p-3 md:p-4 lg:px-24 xl:px-36">
+                <div className="sm:col-span-5 md:col-span-4 rounded-xl">
+                    <ProfileCard userId={userId} />
+                    <div className="hidden lg:block">
+                        {/* <FriendsList userId={userId} /> */}
+                    </div>
+                </div>
+                <div className="sm:col-span-7 md:col-span-8">
+                    <ProfileInfo userId={userId} />
+                    <Posts userId={userId} isProfile={true} />
+                    {/* {userId === loggedInUser._id ? (
+                            <CreatePostBox />
+                        ) : (
+                            <></>
+                        )} */}
+                    {/* <ThreeCard page={"profile"} /> */}
+                    <div className="lg:hidden">
+                        {/* {mobContent === "friends" ? (
+                                <FriendsList userId={userId} />
+                            ) : (
+                                <Posts userId={userId} isProfile={true} />
+                            )} */}
+                    </div>
+                    <div className="hidden lg:block">
+                        {/* <Posts userId={userId} isProfile={true} /> */}
+                    </div>
+                </div>
+            </div>
+        </Layout>
+    );
+};
+
+export default ProfilePage;

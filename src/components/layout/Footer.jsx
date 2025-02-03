@@ -27,7 +27,7 @@ const Footer = () => {
                 <h4 className="font-bold text-sm text-blue-700">
                     SSPM COMMUNITY
                 </h4>
-                <p className="text-gray-700">&copy; 2024</p>
+                <p className="text-gray-700">&copy;2025</p>
             </div>
         </div>
     );
