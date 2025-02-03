@@ -13,6 +13,8 @@ import { Toaster } from 'sonner';
 import EditProfile from "./features/user/components/EditProfile";
 import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
+import GroupPage from "./pages/groupPage";
+// import GroupsPage from "./pages/GroupsPage";
 
 function App() {
     const dispatch = useDispatch();
@@ -110,6 +112,24 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <UserNetwork />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    {/* Groups routes */}
+                    {/* <Route
+                        path="/groups"
+                        element={
+                            <ProtectedRoute>
+                                <GroupsPage />
+                            </ProtectedRoute>
+                        }
+                    /> */}
+                    <Route
+                        path="/groups/:groupId"
+                        element={
+                            <ProtectedRoute>
+                                <GroupPage />
                             </ProtectedRoute>
                         }
                     />

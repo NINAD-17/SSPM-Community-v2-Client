@@ -78,14 +78,17 @@ const UserNetwork = () => {
     };
 
     const currentCategory = getCategoryData();
+    console.log("current category return data: ", currentCategory);
+    console.log("data: ", connections.data);
     const filteredUsers = Array.isArray(currentCategory?.data) 
-        ? currentCategory.data.filter(user => 
-            user?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user?.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user?.currentlyWorkingAt?.toLowerCase().includes(searchQuery.toLowerCase())
+        ? currentCategory.data.filter(item => 
+            item?.user?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item?.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item?.user?.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item?.user?.currentlyWorkingAt?.toLowerCase().includes(searchQuery.toLowerCase())
         )
         : [];
+        console.log("filtered users: ", filteredUsers);
 
     const handleCategoryClick = (category) => {
         setSelectedCategory(category);

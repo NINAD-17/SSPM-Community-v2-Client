@@ -3,40 +3,43 @@ import {
     fetchFollowers,
     fetchFollowings,
     fetchConnections,
+    fetchInvitations,
+    fetchPendingConnections,
     toggleFollow,
+    removeFollower,
+    removeConnection,
     sendConnectionRequest,
     acceptConnectionRequest,
     declineConnectionRequest,
 } from "./services/userNetworkService";
-import { fetchInvitations, fetchPendingConnections, removeConnection, removeFollower } from "./services/userNetworkService";
 // import { userNetworkService } from "./services/userNetworkService";
 
 const initialState = {
     followers: {
         data: [],
-        status: 'idle',
-        error: null
+        status: "idle",
+        error: null,
     },
     followings: {
         data: [],
-        status: 'idle',
-        error: null
+        status: "idle",
+        error: null,
     },
     connections: {
         data: [],
-        status: 'idle',
-        error: null
+        status: "idle",
+        error: null,
     },
     invitations: {
         data: [],
-        status: 'idle',
-        error: null
+        status: "idle",
+        error: null,
     },
     pendingConnections: {
         data: [],
-        status: 'idle',
-        error: null
-    }
+        status: "idle",
+        error: null,
+    },
 };
 
 export const loadFollowers = createAsyncThunk(
@@ -70,12 +73,9 @@ export const loadConnections = createAsyncThunk(
     async (userId, { rejectWithValue }) => {
         try {
             const response = await fetchConnections(userId);
-            console.log("In slice connections: ", response.data);
-            return response.data;
+            return response;
         } catch (error) {
-            return rejectWithValue(
-                error.response?.data || "Failed to load connections"
-            );
+            return rejectWithValue(error.message);
         }
     }
 );
@@ -182,15 +182,7 @@ const userNetworkSlice = createSlice({
     name: "userNetwork",
     initialState,
     reducers: {
-        clearUserNetwork: (state) => {
-            Object.keys(state).forEach(key => {
-                state[key] = {
-                    data: [],
-                    status: 'idle',
-                    error: null
-                };
-            });
-        }
+        clearUserNetwork: () => initialState,
     },
     extraReducers: (builder) => {
         builder
@@ -200,12 +192,12 @@ const userNetworkSlice = createSlice({
             })
             .addCase(loadFollowers.fulfilled, (state, action) => {
                 state.followers.status = "succeeded";
-                state.followers.data = action.payload;
+                state.followers.data = action.payload.data?.followers || [];
                 state.followers.error = null;
             })
             .addCase(loadFollowers.rejected, (state, action) => {
                 state.followers.status = "failed";
-                state.followers.error = action.payload;
+                state.followers.error = action.payload || "Failed to load followers";
             })
             .addCase(loadFollowings.pending, (state) => {
                 state.followings.status = "loading";
@@ -213,12 +205,12 @@ const userNetworkSlice = createSlice({
             })
             .addCase(loadFollowings.fulfilled, (state, action) => {
                 state.followings.status = "succeeded";
-                state.followings.data = action.payload;
+                state.followings.data = action.payload.data?.followings || [];
                 state.followings.error = null;
             })
             .addCase(loadFollowings.rejected, (state, action) => {
                 state.followings.status = "failed";
-                state.followings.error = action.payload || action.error.message;
+                state.followings.error = action.payload || "Failed to load followings";
             })
             .addCase(loadConnections.pending, (state) => {
                 state.connections.status = "loading";
@@ -226,12 +218,12 @@ const userNetworkSlice = createSlice({
             })
             .addCase(loadConnections.fulfilled, (state, action) => {
                 state.connections.status = "succeeded";
-                state.connections.data = action.payload;
+                state.connections.data = action.payload.data?.connections || [];
                 state.connections.error = null;
             })
             .addCase(loadConnections.rejected, (state, action) => {
                 state.connections.status = "failed";
-                state.connections.error = action.payload || action.error.message;
+                state.connections.error = action.payload || "Failed to load connections";
             })
             .addCase(removeConnectionButton.pending, (state) => {
                 state.connections.status = "loading";
@@ -281,6 +273,19 @@ const userNetworkSlice = createSlice({
                 state.pendingConnections.data = state.pendingConnections.data
                     .filter(conn => conn._id !== connectionId);
             })
+            .addCase(loadPendingConnections.pending, (state) => {
+                state.pendingConnections.status = "loading";
+                state.pendingConnections.error = null;
+            })
+            .addCase(loadPendingConnections.fulfilled, (state, action) => {
+                state.pendingConnections.status = "succeeded";
+                state.pendingConnections.data = action.payload.data?.connections || [];
+                state.pendingConnections.error = null;
+            })
+            .addCase(loadPendingConnections.rejected, (state, action) => {
+                state.pendingConnections.status = "failed";
+                state.pendingConnections.error = action.payload || "Failed to load pending connections";
+            })
     },
 });
 
@@ -288,9 +293,7 @@ export const selectFollowers = (state) => state.userNetwork.followers;
 export const selectFollowings = (state) => state.userNetwork.followings;
 export const selectConnections = (state) => state.userNetwork.connections;
 export const selectInvitations = (state) => state.userNetwork.invitations;
-export const selectPendingConnections = (state) =>
-    state.userNetwork.pendingConnections;
-
+export const selectPendingConnections = (state) => state.userNetwork.pendingConnections;
 
 export const { clearUserNetwork } = userNetworkSlice.actions;
 export default userNetworkSlice.reducer;
