@@ -14,6 +14,7 @@ import EditProfile from "./features/user/components/EditProfile";
 import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
 import GroupPage from "./pages/groupPage";
+import OpportunityPage from "./pages/OpportunityPage";
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -130,6 +131,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <GroupPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/opportunities"
+                        element={
+                            <ProtectedRoute>
+                                <OpportunityPage />
                             </ProtectedRoute>
                         }
                     />
