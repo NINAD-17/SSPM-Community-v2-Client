@@ -22,6 +22,7 @@ const initialState = {
 };
 
 // Async Actions
+// Registration
 export const registerInit = createAsyncThunk(
     "auth/registerInit",
     async(email, { rejectWithValue}) => {
@@ -60,6 +61,7 @@ export const registerComplete = createAsyncThunk(
     }
 );
 
+// Login
 export const loginInit = createAsyncThunk(
     "auth/loginInit",
     async (credentials, { rejectWithValue }) => {
@@ -85,12 +87,14 @@ export const loginVerifyOTP = createAsyncThunk(
     }
 );
 
+// Logout
 export const logout = createAsyncThunk(
     "auth/logout",
     async (_, { dispatch, rejectWithValue }) => {
         try {
             await logoutUser();
             dispatch(clearUser());
+            dispatch(resetAuth());
             return;
         } catch (error) {
             return rejectWithValue(error.response?.data || 'Logout failed');
@@ -98,6 +102,7 @@ export const logout = createAsyncThunk(
     }
 );
 
+// Fetch User Info on load
 export const fetchUserInfo = createAsyncThunk(
     "auth/fetchUserInfo",
     async (_, { dispatch, rejectWithValue }) => {
@@ -201,6 +206,14 @@ const authSlice = createSlice({
                 state.actionStatus = "failed";
                 state.error = action.payload || action.error.message;
             })
+            // Logout
+            .addCase(logout.pending, (state) => {
+                state.actionStatus = "loading";
+            })
+            .addCase(logout.rejected, (state, action) => {
+                state.actionStatus = "failed";
+                state.error = action.payload || action.error.message;
+            })
             // Fetch User Info
             .addCase(fetchUserInfo.pending, (state) => {
                 state.fetchStatus = "loading";
@@ -217,4 +230,5 @@ const authSlice = createSlice({
     },
 });
 
+export const { resetAuth } = authSlice.actions;
 export default authSlice.reducer;

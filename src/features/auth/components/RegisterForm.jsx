@@ -83,7 +83,9 @@ const RegisterForm = () => {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full p-2 rounded-xl"
+                                className={`mb-2 w-full bg-white rounded-xl p-2 text-md
+                                focus:-outline-offset-1 outline-blue-400 focus:border-transparent`}
+                                disabled={registrationStep === "otp"}
                                 placeholder="Enter your email"
                                 required
                             />
@@ -91,7 +93,7 @@ const RegisterForm = () => {
                         <button
                             type="submit"
                             disabled={actionStatus === "loading"}
-                            className="w-full p-2 bg-blue-800 text-white rounded-xl"
+                            className="w-full p-2 bg-blue-800 text-white rounded-xl cursor-pointer hover:bg-blue-500"
                         >
                             {actionStatus === "loading" ? (
                                 <div className="flex justify-center items-center">
@@ -135,7 +137,8 @@ const RegisterForm = () => {
                                 type="text"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
-                                className="w-full p-2 rounded-xl"
+                                className="mb-2 w-full bg-white rounded-xl p-2 text-md
+                                focus:-outline-offset-1 outline-blue-400  focus:border-transparent"
                                 placeholder="Enter OTP"
                                 required
                             />
@@ -147,7 +150,7 @@ const RegisterForm = () => {
                         >
                             {actionStatus === "loading" ? (
                                 <div className="flex justify-center items-center">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white cursor-pointer hover:bg-blue-500"></div>
                                 </div>
                             ) : (
                                 "Verify OTP"
@@ -188,7 +191,7 @@ const RegisterForm = () => {
                                         firstName: e.target.value,
                                     })
                                 }
-                                className="w-full p-2 rounded-xl"
+                                className="mb-2 w-full bg-white rounded-xl p-2 text-md focus:-outline-offset-1 outline-blue-400  focus:border-transparent"
                                 required
                                 placeholder="First Name"
                             />
@@ -210,7 +213,7 @@ const RegisterForm = () => {
                                         lastName: e.target.value,
                                     })
                                 }
-                                className="w-full p-2 rounded-xl"
+                                className="mb-2 w-full bg-white rounded-xl p-2 text-md focus:-outline-offset-1 outline-blue-400  focus:border-transparent"
                                 required
                                 placeholder="Last Name"
                             />
@@ -234,7 +237,8 @@ const RegisterForm = () => {
                                     password: e.target.value,
                                 })
                             }
-                            className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
+                            className="mb-2 w-full bg-white rounded-xl p-2 text-md
+                                focus:-outline-offset-1 outline-blue-400 focus:border-transparent"
                             placeholder="Create a strong password (min 8 characters)"
                         />
                     </div>
@@ -255,7 +259,8 @@ const RegisterForm = () => {
                                     branch: e.target.value,
                                 })
                             }
-                            className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
+                            className="mb-2 w-full bg-white rounded-xl p-2 text-md
+                                focus:-outline-offset-1 outline-blue-400 focus:border-transparent"
                             placeholder="Enter your Branch - Computer Engineering"
                         />
                     </div>
@@ -278,14 +283,15 @@ const RegisterForm = () => {
                                     graduationYear: e.target.value,
                                 })
                             }
-                            className="mb-2 w-full outline-1 outline-blue-400 rounded-xl p-2 text-md"
+                            className="mb-2 w-full bg-white rounded-xl p-2 text-md
+                                focus:-outline-offset-1 outline-blue-400 focus:border-transparent"
                             placeholder={currentYear}
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={actionStatus === "loading"}
-                        className="w-full p-2 bg-blue-800 text-white rounded-xl"
+                        className="w-full p-2 mt-4 bg-blue-800 text-white rounded-xl cursor-pointer hover:bg-blue-500"
                     >
                         {actionStatus === "loading" ? (
                             <div className="flex justify-center items-center">

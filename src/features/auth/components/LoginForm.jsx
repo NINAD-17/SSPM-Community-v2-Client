@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { loginInit, loginVerifyOTP } from "../authSlice";
 
 const LoginForm = () => {
@@ -11,19 +11,19 @@ const LoginForm = () => {
     const { loginStep, verifiedEmail, actionStatus, error } = useSelector(
         (state) => state.auth
     );
-    
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const [ otp, setOtp ] = useState("");
+    const [otp, setOtp] = useState("");
 
     const handleCredentialsSubmit = async (event) => {
         event.preventDefault();
         try {
             await dispatch(loginInit({ email, password })).unwrap();
-            toast.success('OTP sent to your email!');
+            toast.success("OTP sent to your email!");
         } catch (err) {
-            toast.error(err?.message || 'Login failed. Please try again.');
+            toast.error(err?.message || "Login failed. Please try again.");
             console.error(err);
         }
     };
@@ -31,17 +31,19 @@ const LoginForm = () => {
     const handleOTPSubmitAndLogin = async (event) => {
         event.preventDefault();
         try {
-            await dispatch(loginVerifyOTP({ email: verifiedEmail, otp })).unwrap();
-            toast.success('Successfully logged in!');
-            const from = location.state?.from?.pathname || '/home';
+            await dispatch(
+                loginVerifyOTP({ email: verifiedEmail, otp })
+            ).unwrap();
+            toast.success("Successfully logged in!");
+            const from = location.state?.from?.pathname || "/home";
             navigate(from, { replace: true });
         } catch (err) {
-            toast.error(err?.message || 'Login failed. Please try again.');
+            toast.error(err?.message || "Login failed. Please try again.");
             console.error(err);
         }
     };
 
-    if(loginStep === "credentials") {
+    if (loginStep === "credentials") {
         return (
             <div className="flex flex-col gap-8 justify-center items-center w-full h-screen">
                 <div>
@@ -66,8 +68,7 @@ const LoginForm = () => {
                                 onChange={(event) =>
                                     setEmail(event.target.value)
                                 }
-                                className="mb-2 w-full bg-white rounded-xl p-2 text-md
-                                focus:-outline-offset-1 outline-blue-400  focus:border-transparent"
+                                className="mb-2 w-full bg-white rounded-xl p-2 text-md focus:-outline-offset-1 outline-blue-400  focus:border-transparent"
                                 placeholder="Enter your email"
                             />
                         </div>
@@ -184,7 +185,7 @@ const LoginForm = () => {
                 </form>
             </div>
         </div>
-    );    
+    );
 };
 
 export default LoginForm;
