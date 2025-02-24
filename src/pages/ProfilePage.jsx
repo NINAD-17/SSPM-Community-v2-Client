@@ -6,6 +6,7 @@ import ProfileInfo from "../features/profile/components/ProfileInfo";
 import { clearProfile, fetchUserProfile } from "../features/profile/profileSlice";
 import Layout from "../components/layout/Layout";
 import Posts from "../features/posts/components/Posts";
+import Spinner from "../components/common/Spinner";
 // import FriendsList from "../../components/FriendsList";
 // import CreatePostBox from "../../components/CreatePostBox";
 // import ThreeCard from "../../components/ThreeCard";
@@ -26,7 +27,7 @@ const ProfilePage = () => {
     }, [userId, dispatch]);
 
     if(!profile) {
-        return <div>Loading...</div>;
+        return <Spinner />;
     }
 
     return (

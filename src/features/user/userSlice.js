@@ -11,11 +11,11 @@ const initialState = {
 // Async action for updating profile
 export const updateProfile = createAsyncThunk(
     "user/updateProfile",
-    async (userData, { rejectWithValue }) => {
+    async ({ formData, userId }, { rejectWithValue }) => {
         try {
-            const response = await updateUserProfile(userData);
-            if (!response.data?.user) {
-                throw new Error('No user data received');
+            const response = await updateUserProfile(formData, userId);
+            if (!response?.data?.profile) {
+                throw new Error('No profile data received');
             }
             return response.data;
         } catch (error) {
@@ -26,14 +26,11 @@ export const updateProfile = createAsyncThunk(
 
 export const updateAvatar = createAsyncThunk(
     "user/updateAvatar",
-    async(avatarFile, { rejectWithValue }) => {
+    async ({ avatarData, userId }, { rejectWithValue }) => {
         try {
-            const response = await updateUserAvatar(avatarFile);
-            if (!response.data?.user) {
-                throw new Error('No user data received');
-            }
+            const response = await updateUserAvatar(avatarData, userId);
+            console.log({response});
             return response.data;
-
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to update avatar");
         }
@@ -65,7 +62,7 @@ const userSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateProfile.fulfilled, (state, action) => {
-                state.user = action.payload.user;
+                state.user = action.payload.profile;
                 state.status = 'succeeded';
                 state.error = null;
             })
@@ -78,7 +75,7 @@ const userSlice = createSlice({
                 state.error = null;
             })
             .addCase(updateAvatar.fulfilled, (state, action) => {
-                state.user = action.payload.user;
+                state.user = action.payload.profile;
                 state.status = 'succeeded';
                 state.error = null;
             })

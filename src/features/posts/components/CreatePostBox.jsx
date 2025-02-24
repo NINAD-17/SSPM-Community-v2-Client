@@ -5,6 +5,7 @@ import Dropzone from "../../../components/common/Dropzone";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { toast } from "sonner";
+import defaultAvatar from "../../../assets/user.png"
 
 const quillModules = {
     toolbar: [
@@ -97,8 +98,8 @@ function CreatePostBox() {
                     onClick={() => setIsPostCreationOn(true)}
                 >
                     <img
-                        className="h-12 w-12 rounded-full"
-                        src={user?.avatar || "../../user.png"}
+                        className="h-12 w-12 object-cover rounded-full "
+                        src={user?.avatar || defaultAvatar}
                         alt=""
                     />
                     <div className="flex-1 bg-gray-100 rounded-full py-3 px-6 text-gray-500 hover:bg-gray-200">
@@ -109,8 +110,8 @@ function CreatePostBox() {
                 <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                         <img
-                            className="h-12 w-12 rounded-full"
-                            src={user?.avatar || "../../user.png"}
+                            className="h-12 w-12 object-cover rounded-full"
+                            src={user?.avatar || defaultAvatar}
                             alt=""
                         />
                         <div>
@@ -143,13 +144,13 @@ function CreatePostBox() {
 
                     <div className="flex justify-end space-x-2 pt-4">
                         <button
-                            className="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100"
+                            className="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 cursor-pointer"
                             onClick={() => setIsPostCreationOn(false)}
                         >
                             Cancel
                         </button>
                         <button
-                            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-blue-300"
+                            className={`px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed ${isSubmitting && "cursor-not-allowed"}`}
                             onClick={handlePost}
                             disabled={isSubmitting || (!content.trim() && files.length === 0)}
                         >

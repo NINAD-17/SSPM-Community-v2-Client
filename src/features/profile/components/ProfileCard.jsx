@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { academicYearCalc } from "../../../utils/academicYear";
+import defaultAvatar from "../../../assets/user.png";
 
 const ProfileCard = ({ userId }) => {
     const navigate = useNavigate();
@@ -9,6 +10,7 @@ const ProfileCard = ({ userId }) => {
     const profileStatus = useSelector((state) => state.profile.status);
 
     const user = userId === loggedInUser?._id ? loggedInUser : profile;
+    console.log("pp: ", profile);
 
     if (!user) {
         return (
@@ -35,9 +37,9 @@ const ProfileCard = ({ userId }) => {
     return (
         <div className="bg-white shadow rounded-xl p-6 pb-3">
             <img
-                src={avatar || "../../assets/user.png"}
+                src={avatar || defaultAvatar}
                 alt="Profile"
-                className="h-24 w-24 sm:h-20 sm:w-20 rounded-full mx-auto object-cover border"
+                className="h-24 w-24 sm:h-20 sm:w-20 rounded-full mx-auto object-cover border border-gray-400"
             />
             <h2
                 className="text-xl font-semibold mt-2 text-center hover:underline sm:text-lg lg:text-xl cursor-pointer"

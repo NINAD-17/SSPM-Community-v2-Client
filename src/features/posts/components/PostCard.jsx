@@ -6,6 +6,7 @@ import { calculateTimeAgo } from "../../../utils/calculateTimeAgo";
 import { academicYearCalc } from "../../../utils/academicYear";
 // import CommentCard from "./CommentCard";
 import { toast } from "sonner";
+import defaultAvatar from "../../../assets/user.png"
 
 const MediaGallery = ({ media }) => {
     const [selectedImage, setSelectedImage] = useState(0);
@@ -128,7 +129,7 @@ function PostCard({ post }) {
           <div className="flex items-center space-x-2">
             <img
                         className="h-12 w-12 rounded-full mr-2 object-cover cursor-pointer"
-                        src={userDetails?.avatar || "../../user.png"}
+                        src={userDetails?.avatar || defaultAvatar}
               alt=""
                         onClick={() => navigate(`/profile/${userId}`)}
             />
@@ -142,11 +143,11 @@ function PostCard({ post }) {
                 </h2>
                             {userDetails?.role === "student" ? (
                   <span className="text-gray-400 text-sm ml-2 font-normal">
-                                    {academicYearCalc(userDetails.graduationYear)} Year
+                                    {academicYearCalc(userDetails?.graduationYear)} Year
                   </span>
                 ) : (
                   <span className="text-gray-400 text-sm ml-2 font-normal">
-                                    Alumni - {userDetails.graduationYear}
+                                    Alumni - {userDetails?.graduationYear}
                   </span>
                 )}
               </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { updateProfile, updateAvatar, setUser } from "../userSlice";
 import { toast } from "sonner";
 import Layout from "../../../components/layout/Layout";
@@ -10,6 +10,7 @@ const EditProfile = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, status } = useSelector((state) => state.user);
+    const userId = user._id;
     
     const [formData, setFormData] = useState({
         email: user?.email || "",
@@ -74,111 +75,153 @@ const EditProfile = () => {
         }));
     };
 
-    const handleUpdate = async (event) => {
+    const handleAvatarUpdate = async () => {
+        if (!picture) return;
+
+        try {
+            const avatarData = new FormData();
+            avatarData.append("avatar", picture[0]);
+            
+            const result = await dispatch(updateAvatar({ avatarData, userId })).unwrap();
+            toast.success("Profile picture updated successfully!");
+            setPicture(null);
+            setIsPictureSelected(false);
+        } catch (error) {
+            toast.error(error || "Failed to update profile picture");
+        }
+    };
+
+    const handleProfileUpdate = async (event) => {
         event.preventDefault();
 
         try {
+            // First update avatar if there's a pending avatar change
             if (picture) {
-                const avatarData = new FormData();
-                avatarData.append("avatar", picture[0]);
+                const shouldUpdateAvatar = window.confirm(
+                    "You have an unsaved profile picture. Would you like to save it as well?"
+                );
                 
-                try {
-                    const avatarResult = await dispatch(updateAvatar(avatarData)).unwrap();
-                    toast.success("Profile picture updated successfully!");
-                } catch (error) {
-                    toast.error(error || "Failed to update profile picture");
-                    return;
+                if (shouldUpdateAvatar) {
+                    const avatarData = new FormData();
+                    avatarData.append("avatar", picture[0]);
+                    
+                    try {
+                        await dispatch(updateAvatar({ avatarData, userId })).unwrap();
+                        toast.success("Profile picture updated successfully!");
+                    } catch (error) {
+                        toast.error("Failed to update profile picture");
+                        return;
+                    }
                 }
+                setPicture(null);
+                setIsPictureSelected(false);
             }
 
-            try {
-                const result = await dispatch(updateProfile(formData)).unwrap();
+            // Update other profile fields
+            const response = await dispatch(updateProfile({ 
+                formData,
+                userId 
+            })).unwrap();
+
+            if (response?.profile) {
                 toast.success("Profile updated successfully!");
-                navigate(`/profile/${result.user._id}`);
-            } catch (error) {
-                toast.error(error || "Failed to update profile");
-                return;
+                navigate(`/user/profile/${userId}`);
+            } else {
+                throw new Error('Failed to update profile');
             }
         } catch (error) {
             console.error('Update error:', error);
             toast.error(error?.message || "Failed to update profile");
-        } finally {
-            // Reset loading state if needed
-            dispatch(setUser({ ...user, status: 'idle' }));
         }
     };
 
     return (
         <Layout>
             <div className="bg-white mt-20 mb-5 rounded-xl px-8 py-5 mx-2 md:mx-24 lg:mx-32 xl:mx-40 max-w-7xl 2xl:mx-auto">
-                <form onSubmit={handleUpdate}>
-                    <div className="flex justify-center relative">
-                        <div className="h-24 w-24 relative">
-                            {isPictureSelected ? (
-                                <div className="relative">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) =>
-                                            setPicture(e.target.files)
-                                        }
-                                        className="hidden"
-                                        id="picture-input"
-                                    />
-                                    <label
-                                        htmlFor="picture-input"
-                                        className="cursor-pointer"
-                                    >
-                                        {picture ? (
-                                            <img
-                                                src={
-                                                    URL.createObjectURL(
-                                                        picture[0]
-                                                    ) || ""
-                                                }
-                                                alt="Preview"
-                                                className="h-24 w-24 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
-                                                <span className="material-symbols-outlined">
-                                                    add_photo_alternate
-                                                </span>
-                                            </div>
-                                        )}
-                                    </label>
-                                </div>
-                            ) : (
-                                <div
-                                    className="cursor-pointer relative"
-                                    onClick={() => setIsPictureSelected(true)}
+                <div className="flex justify-center relative mb-12">
+                    <div className="h-24 w-24 relative">
+                        {isPictureSelected ? (
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) =>
+                                        setPicture(e.target.files)
+                                    }
+                                    className="hidden"
+                                    id="picture-input"
+                                />
+                                <label
+                                    htmlFor="picture-input"
+                                    className="cursor-pointer"
                                 >
-                                    <img
-                                        className="rounded-full hover:opacity-50 h-24 w-24 object-cover"
-                                        src={user?.avatar || defaultAvatar}
-                                        alt="Profile"
-                                    />
-                                    <div className="absolute inset-0 rounded-full bg-black opacity-0 hover:opacity-50 flex items-center justify-center transition-opacity duration-200">
-                                        <span className="material-symbols-outlined text-white">
-                                            edit
-                                        </span>
-                                    </div>
+                                    {picture ? (
+                                        <img
+                                            src={
+                                                URL.createObjectURL(
+                                                    picture[0]
+                                                ) || ""
+                                            }
+                                            alt="Preview"
+                                            className="h-24 w-24 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <span className="material-symbols-outlined">
+                                                add_photo_alternate
+                                            </span>
+                                        </div>
+                                    )}
+                                </label>
+                            </div>
+                        ) : (
+                            <div
+                                className="cursor-pointer relative"
+                                onClick={() => setIsPictureSelected(true)}
+                            >
+                                <img
+                                    className="rounded-full hover:opacity-50 h-24 w-24 object-cover"
+                                    src={user?.avatar || defaultAvatar}
+                                    alt="Profile"
+                                />
+                                <div className="absolute inset-0 rounded-full bg-black opacity-0 hover:opacity-50 flex items-center justify-center transition-opacity duration-200">
+                                    <span className="material-symbols-outlined text-white">
+                                        edit
+                                    </span>
                                 </div>
-                            )}
-                            {isPictureSelected && (
+                            </div>
+                        )}
+                        {isPictureSelected && picture && (
+                            <div className="absolute -bottom-14 left-1/2 transform -translate-x-1/2 flex gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setIsPictureSelected(false)}
-                                    className="absolute -right-8 top-0 text-red-400 hover:text-red-600"
+                                    onClick={handleAvatarUpdate}
+                                    className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700 flex items-center gap-1"
                                 >
-                                    <span className="material-symbols-outlined">
+                                    <span className="material-symbols-outlined text-sm">
+                                        check
+                                    </span>
+                                    Save
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPicture(null);
+                                        setIsPictureSelected(false);
+                                    }}
+                                    className="bg-gray-600 text-white px-4 py-1 rounded-full text-sm hover:bg-gray-700 flex items-center gap-1"
+                                >
+                                    <span className="material-symbols-outlined text-sm">
                                         close
                                     </span>
+                                    Cancel
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
+                </div>
 
+                <form onSubmit={handleProfileUpdate}>
                     <div className="text-2xl font-semibold text-center m-3">
                         <h1>
                             {user?.firstName} {user?.lastName}
@@ -432,6 +475,7 @@ const EditProfile = () => {
                             "Update Profile"
                         )}
                     </button>
+                    <p className="text-center text-sm text-gray-500 mt-3">Go to <Link to={`/user/profile/${userId}`}><span className="underline hover:font-semibold hover:text-blue-600">Profile</span></Link></p>
                 </form>
             </div>
         </Layout>

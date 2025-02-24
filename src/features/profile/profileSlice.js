@@ -48,7 +48,8 @@ const profileSlice = createSlice({
                 state.error = null;
             })
             .addCase(fetchUserProfile.fulfilled, (state, action) => {
-                state.profile = action.payload;
+                console.log("ooprof: ", action.payload)
+                state.profile = action.payload.profile;
                 state.status = "succeeded";
                 state.error = null;
                 // state.lastFetched = Date.now();
