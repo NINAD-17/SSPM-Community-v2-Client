@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { toggleLike } from "../services/likesService";
-
+import { toggleLike } from "./services/likesService";
 
 const initialState = {
     status: 'idle',

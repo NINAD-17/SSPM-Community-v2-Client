@@ -6,6 +6,7 @@ import userNetworkReducer from "../features/userNetwork/userNetworkSlice";
 import postsReducer from "../features/posts/postsSlice";
 import groupsReducer from "../features/groups/groupsSlice"
 import opportunityReducer from '../features/opportunities/opportunitySlice';
+import likesReducer from '../features/interactions/likesSlice';
 
 const rootReducer = combineReducers({
     auth: authReducer,
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
     posts: postsReducer,
     groups: groupsReducer,
     opportunities: opportunityReducer,
+    likes: likesReducer,
 });
 
 export default rootReducer;

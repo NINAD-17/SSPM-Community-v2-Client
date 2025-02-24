@@ -93,6 +93,21 @@ const postsSlice = createSlice({
         clearPosts: (state) => initialState,
         clearFeed: (state) => {
             state.feed = initialState.feed;
+        },
+        updatePostInState: (state, action) => {
+            const { postId, updates } = action.payload;
+            
+            // Update in feed if exists
+            const feedPost = state.feed.data.find(p => p._id === postId);
+            if (feedPost) {
+                Object.assign(feedPost, updates);
+            }
+
+            // Update in userPosts if exists
+            const userPost = state.userPosts.data.find(p => p._id === postId);
+            if (userPost) {
+                Object.assign(userPost, updates);
+            }
         }
     },
     extraReducers: (builder) => {
@@ -162,5 +177,5 @@ const postsSlice = createSlice({
 // Selectors
 export const selectAllPosts = (state) => state.posts.posts;
 
-export const { clearPosts, clearFeed } = postsSlice.actions;
+export const { clearPosts, clearFeed, updatePostInState } = postsSlice.actions;
 export default postsSlice.reducer;

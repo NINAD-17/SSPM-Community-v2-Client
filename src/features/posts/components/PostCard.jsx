@@ -7,6 +7,8 @@ import { academicYearCalc } from "../../../utils/academicYear";
 // import CommentCard from "./CommentCard";
 import { toast } from "sonner";
 import defaultAvatar from "../../../assets/user.png"
+import { togglePostLike } from "../../interactions/likesSlice";
+import { updatePostInState } from "../postsSlice";
 
 const MediaGallery = ({ media }) => {
     const [selectedImage, setSelectedImage] = useState(0);
@@ -96,7 +98,7 @@ const MediaGallery = ({ media }) => {
     );
 };
 
-function PostCard({ post }) {
+const PostCard = ({ post }) => {
     const {
         _id: postId,
         userId,
@@ -113,6 +115,7 @@ function PostCard({ post }) {
     const dispatch = useDispatch();
     const loggedInUser = useSelector((state) => state.user.user);
     const [isMoreVertOn, setIsMoreVertOn] = useState(false);
+    const likeStatus = useSelector((state) => state.likes.status);
 
     const handleDelete = async () => {
         try {
@@ -120,6 +123,22 @@ function PostCard({ post }) {
             toast.success("Post deleted successfully");
         } catch (error) {
             toast.error("Failed to delete post");
+        }
+    };
+
+    const handleLikeToggle = async () => {
+        try {
+            const result = await dispatch(togglePostLike({ postId })).unwrap();
+            dispatch(updatePostInState({ 
+                postId, 
+                updates: { 
+                    isLiked: result.liked,
+                    likesCount: likesCount + (result.liked ? 1 : -1)
+                }
+            }));
+        } catch (error) {
+            console.error('Like toggle error:', error);
+            toast.error(error?.message || "Failed to update like");
         }
     };
 
@@ -187,10 +206,19 @@ function PostCard({ post }) {
           </div>
 
             <div className="flex justify-between items-center mt-4 text-gray-500">
-                <div className="flex items-center space-x-2">
-                    <span className="material-symbols-outlined">thumb_up</span>
+                <button 
+                    onClick={handleLikeToggle}
+                    disabled={likeStatus === 'loading'}
+                    className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
+                >
+                    <span 
+                        className={`material-symbols-outlined ${isLiked ? "text-red-500" : ""}`}
+                        style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                    >
+                        favorite
+                    </span>
                     <span>{likesCount}</span>
-          </div>
+                </button>
                 <div className="flex items-center space-x-2">
                     <span className="material-symbols-outlined">comment</span>
                     <span>{commentsCount}</span>
