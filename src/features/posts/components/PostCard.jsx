@@ -1,102 +1,16 @@
-import { useState } from "react"
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { removePost } from "../postsSlice";
+import { useNavigate, useLocation } from "react-router-dom";
+import { removePost, toggleFollowButton } from "../postsSlice";
 import { calculateTimeAgo } from "../../../utils/calculateTimeAgo";
 import { academicYearCalc } from "../../../utils/academicYear";
-// import CommentCard from "./CommentCard";
+import { Menu } from '@headlessui/react';
 import { toast } from "sonner";
-import defaultAvatar from "../../../assets/user.png"
+import defaultAvatar from "../../../assets/user.png";
 import { togglePostLike } from "../../interactions/likesSlice";
 import { updatePostInState } from "../postsSlice";
-
-const MediaGallery = ({ media }) => {
-    const [selectedImage, setSelectedImage] = useState(0);
-
-    if (!media || media.length === 0) return null;
-
-    const isPDF = media[0].endsWith('.pdf');
-    const isVideo = media[0].match(/\.(mp4|webm)$/i);
-
-    if (isPDF) {
-        return (
-            <div className="mt-4 border rounded-xl p-4 bg-gray-50">
-                <div className="flex items-center space-x-2">
-                    <span className="material-symbols-outlined text-red-500">picture_as_pdf</span>
-                    <a 
-                        href={media[0]} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                    >
-                        View PDF
-                    </a>
-                </div>
-                <iframe
-                    src={`${media[0]}#view=FitH`}
-                    className="w-full h-[400px] mt-2 rounded-lg"
-                    title="PDF Preview"
-                />
-            </div>
-        );
-    }
-
-    if (isVideo) {
-        return (
-            <div className="mt-4">
-                <video
-                    controls
-                    className="w-full rounded-xl"
-                    poster={`${media[0]}#t=0.5`}
-                >
-                    <source src={media[0]} type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        );
-    }
-
-    // Images
-    return (
-        <div className="mt-4">
-            <div className="relative">
-                <img
-                    src={media[selectedImage]}
-                    alt=""
-                    className="w-full rounded-xl object-cover max-h-[600px]"
-                />
-                {media.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                        {media.map((_, idx) => (
-                            <button
-                                key={idx}
-                                className={`w-2 h-2 rounded-full ${
-                                    selectedImage === idx ? 'bg-blue-500' : 'bg-gray-300'
-                                }`}
-                                onClick={() => setSelectedImage(idx)}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-            {media.length > 1 && (
-                <div className="flex mt-2 space-x-2 overflow-x-auto">
-                    {media.map((url, idx) => (
-                        <img
-                            key={idx}
-                            src={url}
-                            alt=""
-                            className={`h-20 w-20 rounded-lg cursor-pointer object-cover ${
-                                selectedImage === idx ? 'ring-2 ring-blue-500' : ''
-                            }`}
-                            onClick={() => setSelectedImage(idx)}
-                        />
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-};
+import PostInteractionsModal from "../../interactions/components/PostInteractionsModal";
+import MediaGallery from "./MediaGallary";
 
 const PostCard = ({ post }) => {
     const {
@@ -108,14 +22,16 @@ const PostCard = ({ post }) => {
         commentsCount,
         isLiked,
         createdAt,
-        userDetails
+        userDetails,
     } = post;
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const loggedInUser = useSelector((state) => state.user.user);
-    const [isMoreVertOn, setIsMoreVertOn] = useState(false);
-    const likeStatus = useSelector((state) => state.likes.status);
+    const [showInteractions, setShowInteractions] = useState(false);
+    const [interactionTab, setInteractionTab] = useState("comments");
+    const location = useLocation();
+    const isOwner = userId === loggedInUser?._id;
 
     const handleDelete = async () => {
         try {
@@ -126,106 +42,186 @@ const PostCard = ({ post }) => {
         }
     };
 
+    const handleShare = () => {
+        const postUrl = `${window.location.origin}/posts/${postId}`;
+        navigator.clipboard.writeText(postUrl);
+        toast.success("Post link copied to clipboard!");
+    };
+
+    const handleFollowToggle = async () => {
+        try {
+            await dispatch(toggleFollowButton(userId)).unwrap();
+            toast.success(userDetails.isFollowing ? "Unfollowed successfully" : "Followed successfully");
+        } catch (error) {
+            toast.error("Failed to update follow status");
+        }
+    };
+
     const handleLikeToggle = async () => {
         try {
             const result = await dispatch(togglePostLike({ postId })).unwrap();
-            dispatch(updatePostInState({ 
-                postId, 
-                updates: { 
-                    isLiked: result.liked,
-                    likesCount: likesCount + (result.liked ? 1 : -1)
-                }
-            }));
+            dispatch(
+                updatePostInState({
+                    postId,
+                    updates: {
+                        isLiked: result.liked,
+                        likesCount: likesCount + (result.liked ? 1 : -1),
+                    },
+                })
+            );
         } catch (error) {
-            console.error('Like toggle error:', error);
+            console.error("Like toggle error:", error);
             toast.error(error?.message || "Failed to update like");
         }
     };
 
-    return (
-      <div className="bg-white p-6 shadow rounded-xl mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img
-                        className="h-12 w-12 rounded-full mr-2 object-cover cursor-pointer"
-                        src={userDetails?.avatar || defaultAvatar}
-              alt=""
-                        onClick={() => navigate(`/profile/${userId}`)}
-            />
-                    <div>
-              <div className="flex items-center">
-                <h2
-                  className="font-semibold text-md hover:underline cursor-pointer"
-                                onClick={() => navigate(`/user/profile/${userId}`)}
-                >
-                                {`${userDetails?.firstName} ${userDetails?.lastName}`}
-                </h2>
-                            {userDetails?.role === "student" ? (
-                  <span className="text-gray-400 text-sm ml-2 font-normal">
-                                    {academicYearCalc(userDetails?.graduationYear)} Year
-                  </span>
-                ) : (
-                  <span className="text-gray-400 text-sm ml-2 font-normal">
-                                    Alumni - {userDetails?.graduationYear}
-                  </span>
-                )}
-              </div>
-                        <p className="text-gray-500 text-sm">
-                            {calculateTimeAgo(createdAt)}
-              </p>
-            </div>
-          </div>
-                {userId === loggedInUser?._id && (
-            <div className="relative">
-                        <span
-                            className="material-symbols-outlined cursor-pointer text-gray-500"
-                onClick={() => setIsMoreVertOn(!isMoreVertOn)}
-              >
-                  more_vert
-                </span>
-                        {isMoreVertOn && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                <button
-                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
-                                    onClick={handleDelete}
-                                >
-                                    Delete Post
-                                </button>
-            </div>
-              )}
-            </div>
-          )}
-        </div>
+    const handleInteractionClick = (tab) => {
+        setInteractionTab(tab);
+        setShowInteractions(true);
+    };
 
-        <div className="my-3">
+    return (
+        <div className="bg-white p-6 shadow rounded-xl mb-4 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 group cursor-pointer"
+                     onClick={() => navigate(`/user/profile/${userId}`)}>
+                    <img
+                        className="h-12 w-12 rounded-full object-cover group-hover:ring-2 ring-blue-200 transition-all"
+                        src={userDetails?.avatar || defaultAvatar}
+                        alt=""
+                    />
+                    <div>
+                        <div className="flex flex-row items-center">
+                            <h2 className="font-semibold text-md group-hover:text-blue-600 transition-colors">
+                                {`${userDetails?.firstName} ${userDetails?.lastName}`}
+                            </h2>
+                            {userDetails?.role === "student" ? (
+                                <span className="text-gray-400 text-sm ml-2 font-normal">
+                                    {academicYearCalc(userDetails?.graduationYear)} Year Student
+                                </span>
+                            ) : (
+                                <span className="text-gray-400 text-sm ml-2 font-normal">
+                                    Alumni - {userDetails?.graduationYear}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-gray-500 text-sm font-normal truncate max-w-[300px]">
+                            {userDetails?.headline || `Branch - ${userDetails?.branch}`}
+                        </p>
+                        <p className="text-gray-500 text-xs font-normal">
+                            {calculateTimeAgo(createdAt)}
+                        </p>
+                    </div>
+                </div>
+
+                <Menu as="div" className="relative">
+                    <Menu.Button className="p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
+                        <span className="material-symbols-outlined text-gray-600">more_vert</span>
+                    </Menu.Button>
+                    <Menu.Items className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                        {!isOwner && (
+                            <Menu.Item>
+                                {({ active }) => (
+                                    <button
+                                        className={`${
+                                            active ? 'bg-gray-100' : ''
+                                        } w-full text-left px-4 py-2 text-sm`}
+                                        onClick={handleFollowToggle}
+                                    >
+                                        {userDetails.isFollowing ? 'Unfollow' : 'Follow'} {userDetails.firstName}
+                                    </button>
+                                )}
+                            </Menu.Item>
+                        )}
+                        <Menu.Item>
+                            {({ active }) => (
+                                <button
+                                    className={`${
+                                        active ? 'bg-gray-100' : ''
+                                    } w-full text-left px-4 py-2 text-sm`}
+                                    onClick={handleShare}
+                                >
+                                    Share Post
+                                </button>
+                            )}
+                        </Menu.Item>
+                        {isOwner && (
+                            <Menu.Item>
+                                {({ active }) => (
+                                    <button
+                                        className={`${
+                                            active ? 'bg-gray-100' : ''
+                                        } w-full text-left px-4 py-2 text-sm text-red-600`}
+                                        onClick={handleDelete}
+                                    >
+                                        Delete Post
+                                    </button>
+                                )}
+                            </Menu.Item>
+                        )}
+                    </Menu.Items>
+                </Menu>
+            </div>
+
+            <div className="my-3">
                 <div 
                     className="description prose prose-blue max-w-none"
                     dangerouslySetInnerHTML={{ __html: content }}
                 />
                 <MediaGallery media={media} />
-          </div>
+            </div>
 
             <div className="flex justify-between items-center mt-4 text-gray-500">
-                <button 
-                    onClick={handleLikeToggle}
-                    disabled={likeStatus === 'loading'}
-                    className="flex items-center space-x-2 hover:text-blue-600 transition-colors"
-                >
-                    <span 
-                        className={`material-symbols-outlined ${isLiked ? "text-red-500" : ""}`}
-                        style={{ fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0" }}
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={handleLikeToggle}
+                        className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
                     >
-                        favorite
-                    </span>
-                    <span>{likesCount}</span>
-                </button>
-                <div className="flex items-center space-x-2">
-                    <span className="material-symbols-outlined">comment</span>
-                    <span>{commentsCount}</span>
+                        <span
+                            className={`material-symbols-outlined ${isLiked ? "text-red-500" : ""}`}
+                            style={{
+                                fontVariationSettings: isLiked ? "'FILL' 1" : "'FILL' 0",
+                            }}
+                        >
+                            favorite
+                        </span>
+                    </button>
+                    <button
+                        className="hover:text-blue-600 cursor-pointer font-medium transition-colors hover:underline"
+                        onClick={() => handleInteractionClick("likes")}
+                        title="View likes"
+                    >
+                        {likesCount}
+                    </button>
+                </div>
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={() => handleInteractionClick("comments")}
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer group"
+                        title="View comments"
+                    >
+                        <span className="material-symbols-outlined group-hover:text-blue-600 transition-colors">
+                            comment
+                        </span>
+                    </button>
+                    <button
+                        className="cursor-pointer hover:text-blue-600 transition-colors font-medium hover:underline"
+                        onClick={() => handleInteractionClick("comments")}
+                        title="View comments"
+                    >
+                        {commentsCount}
+                    </button>
                 </div>
             </div>
-      </div>
-    );
-}
 
-export default PostCard
+            <PostInteractionsModal
+                isOpen={showInteractions}
+                onClose={() => setShowInteractions(false)}
+                post={post}
+                defaultTab={interactionTab}
+            />
+        </div>
+    );
+};
+
+export default PostCard;

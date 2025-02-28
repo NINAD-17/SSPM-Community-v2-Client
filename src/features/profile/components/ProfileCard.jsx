@@ -2,12 +2,64 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { academicYearCalc } from "../../../utils/academicYear";
 import defaultAvatar from "../../../assets/user.png";
+import { toggleFollowButton } from "../../userNetwork/userNetworkSlice";
+import { sendConnectionRequest, removeConnection } from "../../userNetwork/services/userNetworkService";
+import { toast } from "sonner";
 
 const ProfileCard = ({ userId }) => {
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const loggedInUser = useSelector((state) => state.user.user);
     const profile = useSelector((state) => state.profile.profile);
     const profileStatus = useSelector((state) => state.profile.status);
+
+    const handleFollowToggle = async () => {
+        try {
+            await dispatch(toggleFollowButton(userId)).unwrap();
+            toast.success(profile.isFollowing ? "Unfollowed successfully" : "Followed successfully");
+        } catch (error) {
+            toast.error("Failed to update follow status");
+        }
+    };
+
+    const handleConnectionAction = async () => {
+        try {
+            if (!profile.connectionStatus) {
+                // Send new connection request
+                await sendConnectionRequest(userId);
+                toast.success("Connection request sent!");
+            } else if (profile.connectionStatus.status === "pending") {
+                if (profile.connectionStatus.initiatedByMe) {
+                    // Cancel sent request
+                    await removeConnection(profile.connectionStatus.connectionId);
+                    toast.success("Connection request cancelled");
+                } else {
+                    // Accept received request
+                    await acceptConnectionRequest(profile.connectionStatus.connectionId);
+                    toast.success("Connection request accepted");
+                }
+            } else if (profile.connectionStatus.status === "accepted") {
+                // Remove connection
+                await removeConnection(profile.connectionStatus.connectionId);
+                toast.success("Connection removed");
+            }
+        } catch (error) {
+            toast.error("Failed to update connection");
+        }
+    };
+
+    const getConnectionButtonText = () => {
+        if (!profile.connectionStatus) return "Connect";
+        
+        switch (profile.connectionStatus.status) {
+            case "pending":
+                return profile.connectionStatus.initiatedByMe ? "Cancel Request" : "Accept Request";
+            case "accepted":
+                return "Remove Connection";
+            default:
+                return "Connect";
+        }
+    };
 
     const user = userId === loggedInUser?._id ? loggedInUser : profile;
     console.log("pp: ", profile);
@@ -31,7 +83,9 @@ const ProfileCard = ({ userId }) => {
         branch,
         role,
         isAlumni,
-        graduationYear
+        graduationYear,
+        isFollowing,
+        connectionStatus
     } = user;
 
     return (
@@ -112,13 +166,29 @@ const ProfileCard = ({ userId }) => {
                     </span>
                 </div>
             ) : (
-                <div className="flex justify-center items-center text-blue-700 hover:text-blue-400">
-                    {/* Friend functionality will be added later */}
-                    <button className="w-full bg-blue-800 p-2 rounded-xl mt-3 text-white hover:bg-blue-500 flex space-x-2 justify-center">
-                        <p>Add as a Friend</p>
-                        <span className="material-symbols-outlined">
-                            person_add
-                        </span>
+                <div className="flex flex-col gap-2 mt-4">
+                    <button
+                        onClick={handleFollowToggle}
+                        className={`w-full p-2 rounded-xl text-white transition-colors ${
+                            profile.isFollowing 
+                                ? 'bg-gray-600 hover:bg-gray-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                    >
+                        {profile.isFollowing ? 'Unfollow' : 'Follow'}
+                    </button>
+                    
+                    <button
+                        onClick={handleConnectionAction}
+                        className={`w-full p-2 rounded-xl transition-colors ${
+                            profile.connectionStatus?.status === 'accepted'
+                                ? 'bg-gray-600 hover:bg-gray-700 text-white'
+                                : profile.connectionStatus?.status === 'pending'
+                                ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                    >
+                        {getConnectionButtonText()}
                     </button>
                 </div>
             )}

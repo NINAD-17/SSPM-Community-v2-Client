@@ -62,16 +62,44 @@ const UserNetwork = () => {
         },
     ];
 
+    const filterUsers = (users, query) => {
+        if (!Array.isArray(users)) return [];
+        
+        return users.filter(item => {
+            const user = item.recipient || item.requester || item;
+            const searchString = query.toLowerCase();
+            
+            return (
+                user.firstName?.toLowerCase().includes(searchString) ||
+                user.lastName?.toLowerCase().includes(searchString) ||
+                user.headline?.toLowerCase().includes(searchString) ||
+                user.currentlyWorkingAt?.toLowerCase().includes(searchString)
+            );
+        });
+    };
+
     const getCategoryData = () => {
         switch (selectedCategory) {
             case "Connections":
-                return connections;
+                return {
+                    ...connections,
+                    data: filterUsers(connections.data, searchQuery)
+                };
             case "Followers":
-                return followers;
+                return {
+                    ...followers,
+                    data: filterUsers(followers.data, searchQuery)
+                };
             case "Following":
-                return followings;
+                return {
+                    ...followings,
+                    data: filterUsers(followings.data, searchQuery)
+                };
             case "Pending Requests":
-                return pendingRequests;
+                return {
+                    ...pendingRequests,
+                    data: filterUsers(pendingRequests.data, searchQuery)
+                };
             default:
                 return { data: [], status: 'idle', error: null };
         }
@@ -80,15 +108,6 @@ const UserNetwork = () => {
     const currentCategory = getCategoryData();
     console.log("current category return data: ", currentCategory);
     console.log("data: ", connections.data);
-    const filteredUsers = Array.isArray(currentCategory?.data) 
-        ? currentCategory.data.filter(item => 
-            item?.user?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item?.user?.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item?.user?.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item?.user?.currentlyWorkingAt?.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        : [];
-        console.log("filtered users: ", filteredUsers);
 
     const handleCategoryClick = (category) => {
         setSelectedCategory(category);
@@ -200,8 +219,8 @@ const UserNetwork = () => {
                                     <div className="text-center py-8 text-red-500">
                                         {currentCategory.error}
                                     </div>
-                                ) : filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user) => (
+                                ) : currentCategory.data.length > 0 ? (
+                                    currentCategory.data.map((user) => (
                                         <UserCard
                                             key={user._id}
                                             user={user}

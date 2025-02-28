@@ -16,37 +16,42 @@ PostCardWithRef.displayName = 'PostCardWithRef';
 
 const Posts = ({ userId = null, isProfile = false }) => {
     const dispatch = useDispatch();
-    const { data: posts, status, error, lastPostId, allPostsFetched } = 
+    const { data: posts, status, error, lastPostId, fetchCount, allPostsFetched } = 
         useSelector(state => state.posts[isProfile ? 'userPosts' : 'feed']);
     
     const observer = useRef();
+    
     const lastPostRef = useCallback(node => {
-        if (status === 'loading' || !node) return;
+        // Don't observe if loading, no node, or all posts are fetched
+        if (status === 'loading' || !node || allPostsFetched) return;
+        
         if (observer.current) observer.current.disconnect();
+        console.log({fetchCount})
         
         observer.current = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting && !allPostsFetched) {
-                const params = { lastPostId, limit: 10 };
+                const params = { lastPostId, limit: 10, fetchCount: fetchCount + 1 };
+                console.log({params})
                 if (isProfile) {
                     dispatch(loadUserPosts({ userId, ...params }));
                 } else {
                     dispatch(loadFeedPosts(params));
+                    console.log("loadPosts: ", {fetchCount}, "\n", allPostsFetched);
                 }
             }
         });
 
-        observer.current.observe(node);
-    }, [lastPostId, allPostsFetched, status, dispatch, isProfile, userId]);
+        if (node) observer.current.observe(node);
+    }, [lastPostId, allPostsFetched, status, dispatch, isProfile, userId, fetchCount]);
 
     useEffect(() => {
-        const params = { lastPostId: null, limit: 10 };
+        const params = { lastPostId: null, limit: 10, fetchCount: 0 };
         if (isProfile) {
             dispatch(loadUserPosts({ userId, ...params }));
         } else {
             dispatch(loadFeedPosts(params));
         }
 
-        // Cleanup function
         return () => {
             if (!isProfile) {
                 dispatch(clearFeed());
@@ -66,14 +71,29 @@ const Posts = ({ userId = null, isProfile = false }) => {
                 </div>
             ) : (
                 <>
-                    {posts?.map((post) => (
-                        <div key={post._id}>
-                            <PostCard post={post} />
-                        </div>
-                    ))}
-                    {status === 'loading' && (
+                    {posts?.map((post, index) => {
+                        // Apply ref to last post only if not all posts are fetched
+                        if (posts.length === index + 1 && !allPostsFetched) {
+                            return <PostCardWithRef ref={lastPostRef} key={post._id} post={post} />;
+                        }
+                        return (
+                            <div key={post._id}>
+                                <PostCard post={post} />
+                            </div>
+                        );
+                    })}
+                    
+                    {/* Show loading state only if not all posts are fetched */}
+                    {status === 'loading' && !allPostsFetched && (
                         <div className="w-full text-center p-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                        </div>
+                    )}
+
+                    {/* Show end message when all posts are fetched */}
+                    {allPostsFetched && posts.length > 0 && (
+                        <div className="w-full text-center p-4 text-gray-500">
+                            No more posts to load
                         </div>
                     )}
                 </>

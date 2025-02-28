@@ -12,6 +12,6 @@ export const toggleLike = async (postId, postType = "UserPost") => {
 };
 
 export const fetchPostLikes = async (postId, postType = "UserPost") => {
-    const response = await apiClient.get(`/likes/${postId}`, { params: { postType } });
-    return response;
+    const response = await apiClient.get(`/v2/likes/post/${postId}`);
+    return response.data;
 }; 

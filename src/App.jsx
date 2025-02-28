@@ -15,6 +15,8 @@ import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
 import GroupPage from "./pages/groupPage";
 import OpportunityPage from "./pages/OpportunityPage";
+import MobilePostView from './features/interactions/components/MobilePostView';
+import SinglePostPage from './pages/SinglePostPage';
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -28,17 +30,21 @@ function App() {
             await dispatch(fetchUserInfo()).unwrap();
         } catch (error) {
             // Handle token expiration
+            console.log({error});
+            alert("User Fetch On Startup Failed: (trying to refresh token in case of expiration)");
             if (error?.response?.data?.expired) {
                 try {
                     // Try to refresh the access token
                     await refreshAccessToken();
                     console.log("Access token refreshed");
+                    alert("Access token refreshed");
                     
                     // If successful, try fetching user info again
                     await dispatch(fetchUserInfo()).unwrap();
                 } catch (refreshError) {
                     // If refresh fails, user needs to login again
                     console.error("Authentication failed", refreshError);
+                    alert("Authentication failed" + refreshError);
                 }
             }
         }
@@ -55,6 +61,7 @@ function App() {
             </div>
         );
     }
+
 
     return (
         <>
@@ -139,6 +146,22 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <OpportunityPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/post/:postId"
+                        element={
+                            <ProtectedRoute>
+                                <MobilePostView />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/posts/:postId"
+                        element={
+                            <ProtectedRoute>
+                                <SinglePostPage />
                             </ProtectedRoute>
                         }
                     />

@@ -6,6 +6,7 @@ import {
     fetchFeedPosts,
     uploadPostMedia
 } from "./services/postsService";
+import { toggleFollow } from "../userNetwork/services/userNetworkService";
 
 const initialState = {
     feed: {
@@ -13,6 +14,7 @@ const initialState = {
         totalPosts: 0,
         lastPostId: null,
         allPostsFetched: false,
+        fetchCount: 0,
         status: 'idle',
         error: null
     },
@@ -21,6 +23,7 @@ const initialState = {
         totalPosts: 0,
         lastPostId: null,
         allPostsFetched: false,
+        fetchCount: 0,
         status: 'idle',
         error: null
     }
@@ -52,9 +55,9 @@ export const createNewPost = createAsyncThunk(
 
 export const loadUserPosts = createAsyncThunk(
     "posts/loadUserPosts",
-    async ({ userId, lastPostId, limit = 10 }, { rejectWithValue }) => {
+    async ({ userId, lastPostId, limit = 10, fetchCount = 0 }, { rejectWithValue }) => {
         try {
-            const response = await fetchUserPosts(userId, { lastPostId, limit });
+            const response = await fetchUserPosts(userId, { lastPostId, limit, fetchCount });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -64,9 +67,10 @@ export const loadUserPosts = createAsyncThunk(
 
 export const loadFeedPosts = createAsyncThunk(
     "posts/loadFeedPosts",
-    async ({ lastPostId, limit = 10 }, { rejectWithValue }) => {
+    async ({ lastPostId, limit = 10, fetchCount = 0 }, { rejectWithValue }) => {
+        console.log("call: ", {fetchCount})
         try {
-            const response = await fetchFeedPosts({ lastPostId, limit });
+            const response = await fetchFeedPosts({ lastPostId, limit, fetchCount });
             return response.data;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -86,6 +90,25 @@ export const removePost = createAsyncThunk(
     }
 );
 
+export const toggleFollowButton = createAsyncThunk(
+    "posts/toggleFollow",
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await toggleFollow(userId);
+            console.log(response);
+            if (!response?.data?.isFollowing && response?.data?.isFollowing !== false) {
+                throw new Error('Invalid follow response');
+            }
+            return {
+                userId,
+                isFollowing: response.data.isFollowing
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data || "Failed to toggle follow");
+        }
+    }
+);
+
 const postsSlice = createSlice({
     name: "posts",
     initialState,
@@ -94,6 +117,7 @@ const postsSlice = createSlice({
         clearFeed: (state) => {
             state.feed = initialState.feed;
         },
+        // for like update
         updatePostInState: (state, action) => {
             const { postId, updates } = action.payload;
             
@@ -120,9 +144,9 @@ const postsSlice = createSlice({
             .addCase(createNewPost.fulfilled, (state, action) => {
                 state.feed.status = 'succeeded';
                 state.userPosts.status = 'succeeded';
-                if (action.payload?.data) {
-                    state.feed.data.unshift(action.payload.data);
-                    state.userPosts.data.unshift(action.payload.data);
+                if (action.payload?.post) {
+                    state.feed.data.unshift(action.payload.post);
+                    state.userPosts.data.unshift(action.payload.post);
                 }
             })
             .addCase(createNewPost.rejected, (state, action) => {
@@ -136,31 +160,64 @@ const postsSlice = createSlice({
                 state.userPosts.status = 'loading';
             })
             .addCase(loadUserPosts.fulfilled, (state, action) => {
+                const { posts, totalPosts, allPostsFetched, lastPostId, fetchCount } = action.payload.data;
                 state.userPosts.status = 'succeeded';
-                state.userPosts.data = action.payload.data.posts;
-                state.userPosts.totalPosts = action.payload.data.totalPosts;
-                state.userPosts.allPostsFetched = action.payload.data.allPostsFetched;
-                state.userPosts.lastPostId = action.payload.data.lastPostId;
+                
+                if (!state.userPosts.lastPostId) {
+                    state.userPosts.data = posts;
+                    state.userPosts.fetchCount = fetchCount;
+                } else {
+                    const newPosts = posts.filter(
+                        newPost => !state.userPosts.data.some(
+                            existingPost => existingPost._id === newPost._id
+                        )
+                    );
+                    state.userPosts.data = [...state.userPosts.data, ...newPosts];
+                    state.userPosts.fetchCount = fetchCount;
+                }
+                
+                state.userPosts.totalPosts = totalPosts;
+                state.userPosts.allPostsFetched = allPostsFetched;
+                if (posts.length > 0 && !allPostsFetched) {
+                    state.userPosts.lastPostId = lastPostId;
+                }
+                if (allPostsFetched) {
+                    state.userPosts.status = 'idle';
+                }
             })
             .addCase(loadFeedPosts.pending, (state) => {
                 state.feed.status = 'loading';
             })
             .addCase(loadFeedPosts.fulfilled, (state, action) => {
-                const { posts, totalPosts, allPostsFetched, lastPostId } = action.payload.data;
+                const { posts, totalPosts, allPostsFetched, totalFetchedPosts, lastPostId, fetchCount } = action.payload.data;
+                console.log("slice: ", {fetchCount, totalPosts, allPostsFetched, totalFetchedPosts, lastPostId});
                 state.feed.status = 'succeeded';
-                if (state.feed.lastPostId) {
+                
+                if (!state.feed.lastPostId) {
+                    state.feed.data = posts;
+                    state.feed.fetchCount = fetchCount;
+                } else {
                     const newPosts = posts.filter(
                         newPost => !state.feed.data.some(
                             existingPost => existingPost._id === newPost._id
                         )
                     );
                     state.feed.data = [...state.feed.data, ...newPosts];
-                } else {
-                    state.feed.data = posts;
+                    state.feed.fetchCount = fetchCount;
                 }
+                
                 state.feed.totalPosts = totalPosts;
                 state.feed.allPostsFetched = allPostsFetched;
-                state.feed.lastPostId = lastPostId;
+                if (posts.length > 0 && !allPostsFetched) {
+                    state.feed.lastPostId = lastPostId;
+                }
+                if (allPostsFetched) {
+                    state.feed.status = 'idle';
+                }
+            })
+            .addCase(loadFeedPosts.rejected, (state, action) => {
+                state.feed.status = 'failed';
+                state.feed.error = action.payload;
             })
             // Handle removePost
             .addCase(removePost.fulfilled, (state, action) => {
@@ -170,7 +227,42 @@ const postsSlice = createSlice({
                 state.userPosts.data = state.userPosts.data.filter(
                     post => post._id !== action.payload
                 );
-            });
+            })
+            .addCase(toggleFollowButton.fulfilled, (state, action) => {
+                const { userId, isFollowing } = action.payload;
+                
+                // Update in feed posts
+                state.feed.data = state.feed.data.map(post => {
+                    if (post.userDetails._id === userId) {
+                        return {
+                            ...post,
+                            userDetails: {
+                                ...post.userDetails,
+                                isFollowing
+                            }
+                        };
+                    }
+                    return post;
+                });
+
+                // Update in user posts
+                state.userPosts.data = state.userPosts.data.map(post => {
+                    if (post.userDetails._id === userId) {
+                        return {
+                            ...post,
+                            userDetails: {
+                                ...post.userDetails,
+                                isFollowing
+                            }
+                        };
+                    }
+                    return post;
+                });
+            })
+            .addCase(toggleFollowButton.rejected, (state, action) => {
+                // Add error handling for follow toggle failure
+                console.error('Follow toggle failed:', action.payload);
+            })
     }
 });
 

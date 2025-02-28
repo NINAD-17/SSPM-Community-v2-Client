@@ -68,12 +68,38 @@ export const loadFollowings = createAsyncThunk(
     }
 );
 
+export const toggleFollowButton = createAsyncThunk(
+    "userNetwork/toggleFollow",
+    async (userId, { rejectWithValue }) => {
+        try {
+            const response = await toggleFollow(userId);
+            return { userId, ...response.data };
+        } catch (error) {
+            return rejectWithValue(error.response?.data || "Failed to toggle follow");
+        }
+    }
+);
+
+export const removeFollowerButton = createAsyncThunk(
+    "userNetwork/removeFollower",
+    async (followerId, { rejectWithValue }) => {
+        try {
+            const response = await removeFollower(followerId);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data || "Failed to remove follower"
+            );
+        }
+    }
+);
+
 export const loadConnections = createAsyncThunk(
     "userNetwork/loadConnections",
     async (userId, { rejectWithValue }) => {
         try {
             const response = await fetchConnections(userId);
-            return response;
+            return response.data;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -108,34 +134,6 @@ export const loadInvitations = createAsyncThunk(
     }
 );
 
-export const toggleFollowButton = createAsyncThunk(
-    "userNetwork/toggleFollow",
-    async (followerId, { rejectWithValue }) => {
-        try {
-            const response = await toggleFollow(followerId);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(
-                error.response?.data || "Failed to toggle follow"
-            );
-        }
-    }
-);
-
-export const removeFollowerButton = createAsyncThunk(
-    "userNetwork/removeFollower",
-    async (followerId, { rejectWithValue }) => {
-        try {
-            const response = await removeFollower(followerId);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(
-                error.response?.data || "Failed to remove follower"
-            );
-        }
-    }
-);
-
 export const removeConnectionButton = createAsyncThunk(
     "userNetwork/removeConnection",
     async (connectionId, { rejectWithValue }) => {
@@ -152,7 +150,7 @@ export const removeConnectionButton = createAsyncThunk(
 
 export const acceptConnectionRequestButton = createAsyncThunk(
     "userNetwork/acceptConnectionRequest",
-    async (connectionId, { rejectWithValue }) => {
+    async ({connectionId, user}, { rejectWithValue }) => {
         try {
             const response = await acceptConnectionRequest(connectionId);
             return response.data;
@@ -182,17 +180,18 @@ const userNetworkSlice = createSlice({
     name: "userNetwork",
     initialState,
     reducers: {
-        clearUserNetwork: () => initialState,
+        clearUserNetwork: (state) => initialState
     },
     extraReducers: (builder) => {
         builder
+            // Followers
             .addCase(loadFollowers.pending, (state) => {
                 state.followers.status = "loading";
                 state.followers.error = null;
             })
             .addCase(loadFollowers.fulfilled, (state, action) => {
                 state.followers.status = "succeeded";
-                state.followers.data = action.payload.data?.followers || [];
+                state.followers.data = action.payload?.followers || [];
                 state.followers.error = null;
             })
             .addCase(loadFollowers.rejected, (state, action) => {
@@ -205,45 +204,21 @@ const userNetworkSlice = createSlice({
             })
             .addCase(loadFollowings.fulfilled, (state, action) => {
                 state.followings.status = "succeeded";
-                state.followings.data = action.payload.data?.followings || [];
+                state.followings.data = action.payload?.followings || [];
                 state.followings.error = null;
             })
             .addCase(loadFollowings.rejected, (state, action) => {
                 state.followings.status = "failed";
                 state.followings.error = action.payload || "Failed to load followings";
             })
-            .addCase(loadConnections.pending, (state) => {
-                state.connections.status = "loading";
-                state.connections.error = null;
-            })
-            .addCase(loadConnections.fulfilled, (state, action) => {
-                state.connections.status = "succeeded";
-                state.connections.data = action.payload.data?.connections || [];
-                state.connections.error = null;
-            })
-            .addCase(loadConnections.rejected, (state, action) => {
-                state.connections.status = "failed";
-                state.connections.error = action.payload || "Failed to load connections";
-            })
-            .addCase(removeConnectionButton.pending, (state) => {
-                state.connections.status = "loading";
-            })
-            .addCase(removeConnectionButton.fulfilled, (state, action) => {
-                const { connectionId } = action.payload;
-                state.connections.data = state.connections.data.filter(
-                    (connection) => connection._id !== connectionId
-                );
-            })
             .addCase(toggleFollowButton.pending, (state) => {
                 state.connections.status = "loading";
             })
             .addCase(toggleFollowButton.fulfilled, (state, action) => {
-                const { userId, isFollowed } = action.payload;
-                if (isFollowed) {
-                    state.followings.data.push(userId);
-                } else {
+                const { userId, isFollowing } = action.payload;
+                if (!isFollowing) {
                     state.followings.data = state.followings.data.filter(
-                        (id) => id !== userId
+                        following => following._id !== userId
                     );
                 }
             })
@@ -253,7 +228,52 @@ const userNetworkSlice = createSlice({
             .addCase(removeFollowerButton.fulfilled, (state, action) => {
                 const { followerId } = action.payload;
                 state.followers.data = state.followers.data.filter(
-                    (id) => id !== followerId
+                    follower => follower._id !== followerId
+                );
+            })
+            // Connections
+            .addCase(loadConnections.pending, (state) => {
+                state.connections.status = "loading";
+                state.connections.error = null;
+            })
+            .addCase(loadConnections.fulfilled, (state, action) => {
+                state.connections.status = "succeeded";
+                state.connections.data = action.payload.connections || [];
+                state.connections.error = null;
+            })
+            .addCase(loadConnections.rejected, (state, action) => {
+                state.connections.status = "failed";
+                state.connections.error = action.payload || "Failed to load connections";
+            })
+            .addCase(loadInvitations.pending, (state) => {
+                state.invitations.status = "loading";
+                state.invitations.error = null;
+            })
+            .addCase(loadInvitations.fulfilled, (state, action) => {
+                state.invitations.status = "succeeded";
+                state.invitations.data = action.payload.invitations || [];
+                state.invitations.error = null;
+            })
+            .addCase(loadPendingConnections.pending, (state) => {
+                state.pendingConnections.status = "loading";
+                state.pendingConnections.error = null;
+            })
+            .addCase(loadPendingConnections.fulfilled, (state, action) => {
+                state.pendingConnections.status = "succeeded";
+                state.pendingConnections.data = action.payload.requests || [];
+                state.pendingConnections.error = null;
+            })
+            .addCase(loadPendingConnections.rejected, (state, action) => {
+                state.pendingConnections.status = "failed";
+                state.pendingConnections.error = action.payload || "Failed to load pending connections";
+            })
+            .addCase(removeConnectionButton.pending, (state) => {
+                state.connections.status = "loading";
+            })
+            .addCase(removeConnectionButton.fulfilled, (state, action) => {
+                const { connectionId } = action.payload;
+                state.connections.data = state.connections.data.filter(
+                    conn => conn._id !== connectionId
                 );
             })
             .addCase(acceptConnectionRequestButton.pending, (state) => {
@@ -272,19 +292,6 @@ const userNetworkSlice = createSlice({
                 const { connectionId } = action.payload;
                 state.pendingConnections.data = state.pendingConnections.data
                     .filter(conn => conn._id !== connectionId);
-            })
-            .addCase(loadPendingConnections.pending, (state) => {
-                state.pendingConnections.status = "loading";
-                state.pendingConnections.error = null;
-            })
-            .addCase(loadPendingConnections.fulfilled, (state, action) => {
-                state.pendingConnections.status = "succeeded";
-                state.pendingConnections.data = action.payload.data?.connections || [];
-                state.pendingConnections.error = null;
-            })
-            .addCase(loadPendingConnections.rejected, (state, action) => {
-                state.pendingConnections.status = "failed";
-                state.pendingConnections.error = action.payload || "Failed to load pending connections";
             })
     },
 });

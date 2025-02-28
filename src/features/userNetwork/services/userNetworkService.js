@@ -12,6 +12,16 @@ export const fetchFollowings = async (userId) => {
     return response.data;
 };
 
+export const toggleFollow = async(userId) => {
+    const response = await apiClient.post(`/v2/followers/follow/${userId}`);
+    return response.data;
+}
+
+export const removeFollower = async(userId) => {
+    const response = await apiClient.delete(`/v2/followers/follower/${userId}/remove`);
+    return response.data;
+}
+
 export const fetchConnections = async () => {
     const response = await apiClient.get(`/v2/connections/all`);
     console.log("fetched connections: ", response.data.data);
@@ -30,23 +40,13 @@ export const fetchPendingConnections = async () => {
     return response.data;
 }
 
-export const toggleFollow = async(userId) => {
-    const response = await apiClient.post(`/v2/followers/follow/${userId}`);
-    return response.data;
-}
-
-export const removeFollower = async(userId) => {
-    const response = await apiClient.post(`/v2/followers/follower/${userId}/remove`);
-    return response.data;
-}
-
 export const removeConnection = async(connectionId) => {
-    const response = await apiClient.post(`/v2/connections/${connectionId}/remove`);
+    const response = await apiClient.delete(`/v2/connections/${connectionId}/remove`);
     return response.data;
 }
 
 export const sendConnectionRequest = async (userId) => {
-    const response = await apiClient.post(`/v2/connections/request/${userId}`);
+    const response = await apiClient.post(`/v2/connections/request/${userId}/send`);
     return response.data;
 };
 
