@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import ProfileCard from "../features/profile/components/ProfileCard";
 import ProfileInfo from "../features/profile/components/ProfileInfo";
@@ -17,32 +17,14 @@ const ProfilePage = () => {
     const loggedInUser = useSelector((state) => state.user);
     const profile = useSelector((state) => state.profile.profile);
     const profileStatus = useSelector((state) => state.profile.status);
-    const navigate = useNavigate();
    
     useEffect(() => {
-        const loadUserProfile = async () => {
-            try {
-                const response = await fetchUserProfile(userId);
-                if (!response.data.user) {
-                    navigate('/not-found');
-                    return;
-                }
-                dispatch(fetchUserProfile(userId));
-            } catch (error) {
-                if (error.response?.status === 404) {
-                    navigate('/not-found');
-                } else {
-                    // handle other errors
-                }
-            }
-        };
-
-        loadUserProfile();
+        dispatch(fetchUserProfile(userId));
 
         return () => {
             dispatch(clearProfile());
         };
-    }, [userId, dispatch, navigate]);
+    }, [userId, dispatch]);
 
     if(!profile) {
         return <Spinner />;
