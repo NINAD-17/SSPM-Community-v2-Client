@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import PostCard from '../features/posts/components/PostCard';
 import { fetchSinglePost } from '../features/posts/services/postsService';
 
 const SinglePostPage = () => {
     const { postId } = useParams();
+    const navigate = useNavigate();
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -15,9 +16,17 @@ const SinglePostPage = () => {
             try {
                 setLoading(true);
                 const response = await fetchSinglePost(postId);
+                if (!response.data.post) {
+                    navigate('/not-found');
+                    return;
+                }
                 setPost(response.data.post);
             } catch (error) {
-                setError(error?.response?.data?.message || 'Failed to load post');
+                if (error.response?.status === 404) {
+                    navigate('/not-found');
+                } else {
+                    setError(error?.response?.data?.message || 'Failed to load post');
+                }
             } finally {
                 setLoading(false);
             }
@@ -26,7 +35,7 @@ const SinglePostPage = () => {
         if (postId) {
             loadPost();
         }
-    }, [postId]);
+    }, [postId, navigate]);
 
     if (loading) {
         return (

@@ -17,6 +17,7 @@ import GroupPage from "./pages/groupPage";
 import OpportunityPage from "./pages/OpportunityPage";
 import MobilePostView from './features/interactions/components/MobilePostView';
 import SinglePostPage from './pages/SinglePostPage';
+import NotFoundPage from './pages/NotFoundPage';
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -150,20 +151,24 @@ function App() {
                         }
                     />
                     <Route
-                        path="/post/:postId"
-                        element={
-                            <ProtectedRoute>
-                                <MobilePostView />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
                         path="/posts/:postId"
                         element={
                             <ProtectedRoute>
                                 <SinglePostPage />
                             </ProtectedRoute>
                         }
+                    />
+
+                    {/* Not Found Route - should be last */}
+                    <Route 
+                        path="/not-found" 
+                        element={<NotFoundPage />} 
+                    />
+                    
+                    {/* Catch all invalid routes */}
+                    <Route 
+                        path="*" 
+                        element={<Navigate to="/not-found" replace />} 
                     />
                 </Routes>
             </BrowserRouter>
