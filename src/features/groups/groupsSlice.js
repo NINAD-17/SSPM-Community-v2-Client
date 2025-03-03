@@ -1,219 +1,382 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { 
-    fetchGroups, 
-    createGroup, 
-    joinGroup, 
-    leaveGroup,
     fetchGroupDetails,
     fetchGroupPosts,
     createGroupPost,
-    deletePost,
-    fetchRecommendedGroups
+    deleteGroupPost,
+    updateGroupPost as updateGroupPostAPI,
+    joinGroup as joinGroupAPI,
+    leaveGroup as leaveGroupAPI,
+    fetchRecommendedGroups,
+    fetchGroupMembers,
+    fetchGroupAdmins,
+    fetchAllGroups,
+    fetchAllUserJoinedGroups,
+    // updateGroup
 } from './services/groupService';
+import { toast } from 'sonner';
 
-export const loadGroups = createAsyncThunk(
-    'groups/loadGroups',
-    async (_, { rejectWithValue }) => {
-        try {
-            const response = await fetchGroups();
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+const initialState = {
+    // Current viewed group data
+    currentGroup: {
+        data: null,
+        members: {
+            preview: [], // For sidebar
+            list: [], // For modal
+            totalCount: 0,
+            lastId: null,
+            allFetched: false
+        },
+        admins: {
+            preview: [], // For sidebar
+            list: [], // For modal
+            totalCount: 0,
+            lastId: null,
+            allFetched: false
+        },
+        posts: {
+            items: [],
+            totalCount: 0,
+            totalFetchedPosts: 0,
+            lastId: null,
+            allFetched: false,
+            fetchCount: 0
+        },
+        status: 'idle',
+        error: null
+    },
+    // Groups listing page data
+    groupsList: {
+        all: {
+            items: [],
+            totalCount: 0,
+            lastId: null,
+            allFetched: false,
+            searchQuery: '',
+            fetchCount: 0
+        },
+        joined: {
+            items: [],
+            totalCount: 0,
+            lastId: null,
+            allFetched: false,
+            fetchCount: 0
+        },
+        recommended: [], // Limited list
+        status: 'idle',
+        error: null
     }
-);
+};
 
-export const createNewGroup = createAsyncThunk(
-    'groups/createGroup',
-    async (groupData, { rejectWithValue }) => {
-        try {
-            const response = await createGroup(groupData);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
-export const joinGroupAction = createAsyncThunk(
-    'groups/joinGroup',
-    async (groupId, { rejectWithValue }) => {
-        try {
-            const response = await joinGroup(groupId);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
-export const leaveGroupAction = createAsyncThunk(
-    'groups/leaveGroup',
-    async (groupId, { rejectWithValue }) => {
-        try {
-            const response = await leaveGroup(groupId);
-            return response.data;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
+// Current Group Thunks
 export const loadGroupDetails = createAsyncThunk(
     'groups/loadGroupDetails',
     async (groupId, { rejectWithValue }) => {
         try {
             const response = await fetchGroupDetails(groupId);
-            console.log("loadGroup: ", {response})
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load group details');
         }
     }
 );
 
 export const loadGroupPosts = createAsyncThunk(
     'groups/loadGroupPosts',
-    async ({ groupId, lastPostId }, { rejectWithValue }) => {
+    async ({ groupId, lastPostId = null, limit = 10, fetchCount = 0, sortBy = 'createdAt', sortType = 'desc' }, { rejectWithValue }) => {
         try {
-            console.log("load params: ", {groupId, lastPostId})
-            const response = await fetchGroupPosts(groupId, lastPostId);
-            console.log("group posts resp data: ", response.data);
+            const response = await fetchGroupPosts(groupId, lastPostId, limit, fetchCount, sortBy, sortType);
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load group posts');
         }
     }
 );
 
 export const createNewGroupPost = createAsyncThunk(
-    'groups/createPost',
+    'groups/createNewGroupPost',
     async ({ groupId, postData }, { rejectWithValue }) => {
         try {
             const response = await createGroupPost(groupId, postData);
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            console.log(error);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to create post');
         }
     }
 );
 
-export const deleteGroupPost = createAsyncThunk(
-    'groups/deletePost',
-    async (postId, { rejectWithValue }) => {
+export const updateGroupPost = createAsyncThunk(
+    'groups/updateGroupPost',
+    async ({ groupId, postId, postData }, { rejectWithValue }) => {
         try {
-            await deletePost(postId);
-            return postId;
+            const response = await updateGroupPostAPI(groupId, postId, postData);
+            return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to update post');
         }
     }
 );
 
-export const loadGroupRecommendations = createAsyncThunk(
-    'groups/loadRecommendations',
+export const removeGroupPost = createAsyncThunk(
+    'groups/removeGroupPost',
+    async ({ postId, groupId }, { rejectWithValue }) => {
+        try {
+            const response = await deleteGroupPost(postId, groupId);
+            return { postId, groupId };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to delete post");
+        }
+    }
+);
+
+// Group Membership Thunks
+export const joinGroup = createAsyncThunk(
+    'groups/joinGroup',
+    async (groupId, { rejectWithValue }) => {
+        try {
+            const response = await joinGroupAPI(groupId);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to join group');
+        }
+    }
+);
+
+export const leaveGroup = createAsyncThunk(
+    'groups/leaveGroup',
+    async (groupId, { rejectWithValue }) => {
+        try {
+            const response = await leaveGroupAPI(groupId);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to leave group');
+        }
+    }
+);
+
+// Groups List Page Thunks
+export const loadAllGroups = createAsyncThunk(
+    'groups/loadAllGroups',
+    async ({ lastId = null, limit = 10, search = '', fetchCount = 0 }, { rejectWithValue }) => {
+        try {
+            const response = await fetchAllGroups(lastId, limit, search);
+            return { ...response.data, fetchCount, search };
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load groups');
+        }
+    }
+);
+
+export const loadUserJoinedGroups = createAsyncThunk(
+    'groups/loadUserJoinedGroups',
+    async ({ lastId = null, limit = 10, fetchCount = 0 }, { rejectWithValue }) => {
+        try {
+            const response = await fetchAllUserJoinedGroups(lastId, limit);
+            return { ...response.data, fetchCount };
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load joined groups');
+        }
+    }
+);
+
+export const loadRecommendedGroups = createAsyncThunk(
+    'groups/loadRecommendedGroups',
     async (_, { rejectWithValue }) => {
         try {
             const response = await fetchRecommendedGroups();
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.message);
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load recommendations');
         }
     }
 );
-
-const initialState = {
-    // All groups for listing/discovery
-    groups: [],
-    
-    // Groups the logged-in user is a member of
-    userGroups: [], 
-    
-    // Group recommendations/suggestions
-    suggestions: [],
-    
-    // Currently viewed group details
-    currentGroup: null,
-    
-    // Posts of current group
-    groupPosts: {
-        posts: [],
-        totalPosts: 0,
-        lastPostId: null,
-        allPostsFetched: false
-    },
-    
-    status: 'idle',
-    error: null
-};
 
 const groupsSlice = createSlice({
     name: 'groups',
     initialState,
     reducers: {
-        clearGroupPosts: (state) => {
-            state.groupPosts = initialState.groupPosts;
-        },
         clearCurrentGroup: (state) => {
-            state.currentGroup = null;
+            state.currentGroup = initialState.currentGroup;
+        },
+        clearGroupsList: (state) => {
+            state.groupsList = initialState.groupsList;
+        },
+        updateGroupPostInState: (state, action) => {
+            const { postId, updates } = action.payload;
+            const post = state.currentGroup.posts.items.find(p => p._id === postId);
+            if (post) {
+                Object.assign(post, updates);
+            }
         }
     },
     extraReducers: (builder) => {
         builder
-            // Load all groups
-            .addCase(loadGroups.fulfilled, (state, action) => {
-                state.groups = action.payload.data;
+            // Load Group Details
+            .addCase(loadGroupDetails.pending, (state) => {
+                state.currentGroup.status = 'loading';
             })
-            
-            // // Load user's groups
-            // .addCase(loadUserGroups.fulfilled, (state, action) => {
-            //     state.userGroups = action.payload.data;
-            // })
-            
-            // // Load group suggestions
-            // .addCase(loadGroupSuggestions.fulfilled, (state, action) => {
-            //     state.suggestions = action.payload.data;
-            // })
-            
-            // Current group operations
             .addCase(loadGroupDetails.fulfilled, (state, action) => {
-                console.log("payload: ", action.payload)
-                state.currentGroup = action.payload.data.group;
-                // state.currentGroup = action.payload.data;
+                console.log('loadGroupDetails.fulfilled:', action.payload);
+                state.currentGroup.status = 'succeeded';
+                state.currentGroup.data = action.payload.group;
+                // state.currentGroup.members.preview = action.payload.previewMembers;
+                // state.currentGroup.admins.preview = action.payload.previewAdmins;
+                state.currentGroup.error = null;
             })
-            
-            // Group posts operations
+            .addCase(loadGroupDetails.rejected, (state, action) => {
+                state.currentGroup.status = 'failed';
+                state.currentGroup.error = action.payload;
+                toast.error(action.payload);
+            })
+
+            // Load Group Posts
+            .addCase(loadGroupPosts.pending, (state) => {
+                state.currentGroup.status = 'loading';
+            })
             .addCase(loadGroupPosts.fulfilled, (state, action) => {
-                console.log("ld posts: ", action.payload);
-                const { posts, totalPosts, lastPostId, allPostsFetched } = action.payload.data;
+                console.log('loadGroupPosts.fulfilled:', action.payload);
+                const { posts, totalPosts, totalFetchedPosts, fetchCount, lastPostId, allPostsFetched } = action.payload;
                 
-                // If we're loading more posts (pagination)
-                if (state.groupPosts.lastPostId) {
-                    state.groupPosts.posts.push(...posts);
-                    console.log("slice grp pst: ", state.groupPosts.posts)
+                if (fetchCount === 0) {
+                    state.currentGroup.posts.items = posts;
                 } else {
-                    // Initial load
-                    state.groupPosts.posts = posts;
-                    console.log("slice grp pst: ", {posts}, state.groupPosts.posts);
+                    state.currentGroup.posts.items = [...state.currentGroup.posts.items, ...posts];
                 }
                 
-                state.groupPosts.totalPosts = totalPosts;
-                state.groupPosts.lastPostId = lastPostId;
-                state.groupPosts.allPostsFetched = allPostsFetched;
+                state.currentGroup.posts.totalCount = totalPosts;
+                state.currentGroup.posts.lastId = lastPostId;
+                state.currentGroup.posts.allFetched = allPostsFetched;
+                state.currentGroup.posts.totalFetchedPosts = totalFetchedPosts;
+                state.currentGroup.posts.fetchCount = fetchCount;
+                state.currentGroup.status = 'succeeded';
+                state.currentGroup.error = null;
             })
-            .addCase(deleteGroupPost.fulfilled, (state, action) => {
-                state.groupPosts.posts = state.groupPosts.posts.filter(
-                    post => post._id !== action.payload
+            .addCase(loadGroupPosts.rejected, (state, action) => {
+                state.currentGroup.status = 'failed';
+                state.currentGroup.error = action.payload;
+                toast.error(action.payload);
+            })
+
+            // Create/Update/Delete Group Post
+            .addCase(createNewGroupPost.fulfilled, (state, action) => {
+                console.log("Create New Gr post: ", action.payload);
+                
+                // Transform the post data to match the expected structure
+                const newPost = {
+                    ...action.payload.post,
+                    user: {
+                        _id: action.payload.post.userId,
+                        firstName: state.user?.user?.firstName,
+                        lastName: state.user?.user?.lastName,
+                        avatar: state.user?.user?.avatar,
+                        headline: state.user?.user?.headline
+                    },
+                    likesCount: 0,
+                    commentsCount: 0,
+                    isLiked: false
+                };
+
+                // Add the transformed post to the beginning of the list
+                state.currentGroup.posts.items.unshift(newPost);
+                state.currentGroup.posts.totalCount += 1;
+                if (state.currentGroup.data) {
+                    state.currentGroup.data.postsCount += 1;
+                }
+            })
+            .addCase(updateGroupPost.fulfilled, (state, action) => {
+                const index = state.currentGroup.posts.items.findIndex(
+                    post => post._id === action.payload._id
                 );
-                state.groupPosts.totalPosts--;
+                if (index !== -1) {
+                    state.currentGroup.posts.items[index] = action.payload;
+                }
             })
-            .addCase(loadGroupRecommendations.fulfilled, (state, action) => {
-                state.suggestions = action.payload.data.recommendations;
+            .addCase(removeGroupPost.fulfilled, (state, action) => {
+                const { postId } = action.payload;
+                state.currentGroup.posts.items = state.currentGroup.posts.items.filter(
+                    post => post._id !== postId
+                );
+                state.currentGroup.posts.totalCount -= 1;
+                if (state.currentGroup.data) {
+                    state.currentGroup.data.postsCount = Math.max(0, state.currentGroup.data.postsCount - 1);
+                }
             })
-            // ... other cases
+            .addCase(removeGroupPost.rejected, (state, action) => {
+                toast.error(action.payload || "Failed to delete post");
+            })
+
+            // Group Membership
+            .addCase(joinGroup.fulfilled, (state, action) => {
+                console.log("Join group: ", action.payload)
+                if (state.currentGroup.data) {
+                    state.currentGroup.data.isMember = true;
+                    state.currentGroup.data.membersCount += 1;
+                }
+                // Update in groups list if exists
+                const groupInList = state.groupsList.all.items.find(g => g._id === action.payload.groupId);
+                if (groupInList) {
+                    groupInList.isMember = true;
+                    groupInList.membersCount += 1;
+                }
+            })
+            .addCase(leaveGroup.fulfilled, (state, action) => {
+                console.log("Leave: ", action.payload)
+                if (state.currentGroup.data) {
+                    state.currentGroup.data.isMember = false;
+                    state.currentGroup.data.membersCount = Math.max(0, state.currentGroup.data.membersCount - 1);
+                }
+                // Update in groups list if exists
+                const groupInList = state.groupsList.all.items.find(g => g._id === action.payload.groupId);
+                if (groupInList) {
+                    groupInList.isMember = false;
+                    groupInList.membersCount = Math.max(0, groupInList.membersCount - 1);
+                }
+            })
+
+            // Groups List Page
+            .addCase(loadAllGroups.fulfilled, (state, action) => {
+                const { groups, totalCount, hasMore, fetchCount, search } = action.payload;
+                
+                if (fetchCount === 0 || state.groupsList.all.searchQuery !== search) {
+                    state.groupsList.all.items = groups;
+                } else {
+                    state.groupsList.all.items = [...state.groupsList.all.items, ...groups];
+                }
+                
+                state.groupsList.all.totalCount = totalCount;
+                state.groupsList.all.lastId = groups[groups.length - 1]?._id;
+                state.groupsList.all.allFetched = !hasMore;
+                state.groupsList.all.fetchCount = fetchCount;
+                state.groupsList.all.searchQuery = search;
+                state.groupsList.status = 'succeeded';
+            })
+
+            .addCase(loadUserJoinedGroups.fulfilled, (state, action) => {
+                const { groups, totalCount, hasMore, fetchCount } = action.payload;
+                
+                if (fetchCount === 0) {
+                    state.groupsList.joined.items = groups;
+                } else {
+                    state.groupsList.joined.items = [...state.groupsList.joined.items, ...groups];
+                }
+                
+                state.groupsList.joined.totalCount = totalCount;
+                state.groupsList.joined.lastId = groups[groups.length - 1]?._id;
+                state.groupsList.joined.allFetched = !hasMore;
+                state.groupsList.joined.fetchCount = fetchCount;
+            })
+
+            .addCase(loadRecommendedGroups.fulfilled, (state, action) => {
+                state.groupsList.recommended = action.payload;
+            });
     }
 });
 
-export const { clearGroupPosts } = groupsSlice.actions;
+export const { 
+    clearCurrentGroup, 
+    clearGroupsList, 
+    updateGroupPostInState 
+} = groupsSlice.actions;
 
 export default groupsSlice.reducer; 

@@ -15,7 +15,6 @@ import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
 import GroupPage from "./pages/groupPage";
 import OpportunityPage from "./pages/OpportunityPage";
-import MobilePostView from './features/interactions/components/MobilePostView';
 import SinglePostPage from './pages/SinglePostPage';
 import NotFoundPage from './pages/NotFoundPage';
 // import GroupsPage from "./pages/GroupsPage";

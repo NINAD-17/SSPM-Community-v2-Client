@@ -23,8 +23,8 @@ const quillFormats = [
 ];
 
 function CreatePostBox() {
-    const user = useSelector((state) => state.user.user);
     const dispatch = useDispatch();
+    const user = useSelector((state) => state.user.user);
     const [isPostCreationOn, setIsPostCreationOn] = useState(false);
     const [content, setContent] = useState("");
     const [files, setFiles] = useState([]);
