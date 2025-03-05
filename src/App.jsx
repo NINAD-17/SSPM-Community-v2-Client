@@ -17,6 +17,7 @@ import GroupPage from "./pages/groupPage";
 import OpportunityPage from "./pages/OpportunityPage";
 import SinglePostPage from './pages/SinglePostPage';
 import NotFoundPage from './pages/NotFoundPage';
+import MessagingPage from "./pages/MessagingPage";
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -154,6 +155,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <SinglePostPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/messages"
+                        element={
+                            <ProtectedRoute>
+                                <MessagingPage />
                             </ProtectedRoute>
                         }
                     />
