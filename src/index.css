@@ -30,3 +30,8 @@
         font-style: normal;
     }
 }
+
+.h-screen-minus-navbar {
+    height: calc(100vh - 64px);
+    max-height: calc(100vh - 64px);
+}
