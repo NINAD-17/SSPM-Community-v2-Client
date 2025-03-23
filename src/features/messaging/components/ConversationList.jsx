@@ -105,17 +105,22 @@ const ConversationItem = ({ conversation, currentUserId, onClick, isSelected }) 
   const getLastMessageText = () => {
     if (!conversation.lastMessage) return 'No messages yet';
     
+    if (!conversation.lastMessage.sender || 
+        (!conversation.lastMessage.sender._id && !conversation.lastMessage.content)) {
+        return 'No messages yet';
+    }
+    
     const sender = Array.isArray(conversation.lastMessage.sender) 
-      ? conversation.lastMessage.sender[0] 
-      : conversation.lastMessage.sender;
+        ? conversation.lastMessage.sender[0] 
+        : conversation.lastMessage.sender;
 
-    if (!sender) return conversation.lastMessage.content;
+    if (!sender) return conversation.lastMessage.content || 'No messages yet';
 
     const senderName = sender._id === currentUserId 
-      ? 'You'
-      : conversation.conversationType === 'direct'
-        ? otherParticipant?.firstName
-        : sender.firstName;
+        ? 'You'
+        : conversation.conversationType === 'direct'
+            ? otherParticipant?.firstName
+            : sender.firstName;
 
     return `${senderName}: ${conversation.lastMessage.content}`;
   };
@@ -172,11 +177,11 @@ ConversationItem.propTypes = {
       avatar: PropTypes.string
     })).isRequired,
     lastMessage: PropTypes.shape({
-      content: PropTypes.string.isRequired,
-      createdAt: PropTypes.string.isRequired,
+      content: PropTypes.string,
+      createdAt: PropTypes.string,
       sender: PropTypes.oneOfType([
         PropTypes.shape({
-          _id: PropTypes.string.isRequired,
+          _id: PropTypes.string,
           firstName: PropTypes.string,
           lastName: PropTypes.string
         }),
@@ -210,12 +215,12 @@ ConversationList.propTypes = {
       headline: PropTypes.string
     })).isRequired,
     lastMessage: PropTypes.shape({
-      content: PropTypes.string.isRequired,
-      createdAt: PropTypes.string.isRequired,
+      content: PropTypes.string,
+      createdAt: PropTypes.string,
       sender: PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        firstName: PropTypes.string.isRequired,
-        lastName: PropTypes.string.isRequired,
+        _id: PropTypes.string,
+        firstName: PropTypes.string,
+        lastName: PropTypes.string,
         avatar: PropTypes.string
       })
     })

@@ -32,8 +32,15 @@ export const createNewConversation = async (data) => {
 
 export const fetchMessagesByConversationId = async (conversationId, cursor = null) => {
     try {
-        const url = `/v2/messages/conversation/${conversationId}${cursor ? `?cursor=${cursor}` : ''}`;
+        console.log("Fetching messages for conversation:", cursor);
+        
+        // Convert timestamp to ISO string if cursor exists
+        const cursorParam = cursor ? new Date(parseInt(cursor)).toISOString() : null;
+        const url = `/v2/messages/conversation/${conversationId}${cursorParam ? `?cursor=${cursorParam}` : ''}`;
+        
         const response = await apiClient.get(url);
+        console.log("Response:", response.data.data);
+        
         const { messages, cursor: nextCursor, pagination } = response.data.data;
         
         return {

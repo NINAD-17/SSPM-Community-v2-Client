@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Send, Paperclip, Smile, ArrowLeft, MessageSquare } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -11,11 +11,14 @@ import {
 import Spinner from "../../../components/common/Spinner";
 import defaultAvatar from "../../../assets/user.png";
 import useMediaQuery from "../../../hooks/useMediaQuery";
+import _ from 'lodash';
 
 const ChatWindow = () => {
   const dispatch = useDispatch();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [newMessage, setNewMessage] = useState("");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [prevScrollHeight, setPrevScrollHeight] = useState(0);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   
@@ -25,27 +28,106 @@ const ChatWindow = () => {
   );
   const messageOperation = useSelector(state => state.messages.messageOperation);
 
+  // Scroll to bottom when messages are loaded initially
   useEffect(() => {
-    if (!messageOperation.sending) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isInitialLoad && messages.length > 0 && status !== 'loading') {
+      const scrollToBottom = () => {
+        const container = messagesContainerRef.current;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      };
+      
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(scrollToBottom, 100);
+      setIsInitialLoad(false);
     }
-  }, [messages, messageOperation.sending]);
+  }, [messages, isInitialLoad, status]);
 
-  const handleLoadMore = () => {
+  // Scroll to bottom when a new message is sent
+  useEffect(() => {
+    if (!isInitialLoad && messageOperation.sending === false) {
+      const scrollToBottom = () => {
+        const container = messagesContainerRef.current;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      };
+      
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [messageOperation.sending, isInitialLoad]);
+
+  // Reset initial load state when conversation changes
+  useEffect(() => {
+    if (conversation?._id) {
+      setIsInitialLoad(true);
+    }
+  }, [conversation?._id]);
+
+  const handleLoadMore = async () => {
     if (pagination.hasMore && status !== 'loading') {
-      dispatch(fetchConversationMessages({
-        conversationId: conversation._id,
-        cursor: pagination.nextCursor
-      }));
+      const container = messagesContainerRef.current;
+      if (container) {
+        console.log('Current scroll position:', container.scrollTop); // Debug log
+        console.log('Current scroll height:', container.scrollHeight); // Debug log
+        
+        setPrevScrollHeight(container.scrollHeight);
+        
+        // Fetch more messages
+        await dispatch(fetchConversationMessages({
+          conversationId: conversation._id,
+          cursor: pagination.nextCursor
+        }));
+      }
     }
   };
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
-    if (container?.scrollTop === 0) {
+    if (!container) return;
+
+    // Check if we're near the top (within 100px)
+    const isNearTop = container.scrollTop <= 100;
+    const canLoadMore = pagination.hasMore && status !== 'loading';
+
+    if (isNearTop && canLoadMore) {
+      console.log('Loading more messages...'); // For debugging
       handleLoadMore();
     }
-  };
+  }, [pagination.hasMore, status, pagination.nextCursor, conversation?._id]);
+
+  // Create throttled version of scroll handler
+  const throttledScrollHandler = useMemo(() => 
+    _.throttle((e) => {
+      e.persist(); // Needed for React synthetic events
+      handleScroll();
+    }, 300, { leading: true, trailing: true }), 
+    [handleScroll]
+  );
+
+  // Cleanup throttled handler on unmount
+  useEffect(() => {
+    return () => {
+      throttledScrollHandler.cancel();
+    };
+  }, [throttledScrollHandler]);
+
+  // Maintain scroll position after loading more messages
+  useEffect(() => {
+    if (!isInitialLoad && prevScrollHeight > 0) {
+      const container = messagesContainerRef.current;
+      if (container) {
+        const newScrollHeight = container.scrollHeight;
+        const scrollDiff = newScrollHeight - prevScrollHeight;
+        if (scrollDiff > 0) {
+          container.scrollTop = scrollDiff;
+        }
+        setPrevScrollHeight(0);
+      }
+    }
+  }, [messages.length, prevScrollHeight, isInitialLoad]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -79,13 +161,61 @@ const ChatWindow = () => {
     <div className="h-full flex flex-col">
       <ChatHeader conversation={conversation} otherParticipant={otherParticipant} title={title} isMobile={isMobile} />
       
-      <MessageList 
+      <div 
         ref={messagesContainerRef}
-        messages={messages}
-        currentUser={currentUser}
-        onScroll={handleScroll}
-        isLoading={status === 'loading'}
-      />
+        onScroll={throttledScrollHandler}
+        className="flex-1 overflow-y-auto bg-gray-50 p-4 scroll-smooth relative"
+        style={{ minHeight: 0 }}
+      >
+        {/* Loading indicator for pagination */}
+        {status === 'loading' && !isInitialLoad && (
+          <div className="sticky top-0 left-0 right-0 flex justify-center p-2 bg-gray-50/80 backdrop-blur-sm z-10">
+            <Spinner size="sm" />
+          </div>
+        )}
+
+        {/* Messages list */}
+        <div className="flex flex-col space-y-4">
+          {pagination.hasMore && !isInitialLoad && (
+            <div className="text-center text-sm text-gray-500 py-2">
+              {status === 'loading' ? 'Loading more messages...' : 'Scroll up to load more'}
+            </div>
+          )}
+          
+          {messages.map(message => (
+            <MessageItem 
+              key={message._id}
+              message={message}
+              isOwn={message.sender._id === currentUser._id}
+            />
+          ))}
+        </div>
+
+        {/* Empty state */}
+        {!isInitialLoad && messages.length === 0 && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+            <div className="bg-blue-50 rounded-full p-4 mb-4">
+              <MessageSquare className="w-8 h-8 text-blue-500" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Start the conversation
+            </h3>
+            <p className="text-sm text-gray-500 max-w-sm">
+              Send a message to start chatting. Your messages are private to you and your connection.
+            </p>
+          </div>
+        )}
+
+        {/* Initial loading state */}
+        {isInitialLoad && status === 'loading' && (
+          <div className="flex-1 flex items-center justify-center">
+            <Spinner />
+          </div>
+        )}
+
+        {/* Invisible element for scroll to bottom */}
+        <div ref={messagesEndRef} />
+      </div>
 
       <MessageInput 
         value={newMessage}
