@@ -1,32 +1,83 @@
 import apiClient from "../../../api/apiClient";
 
-const API_URL = "/v2/opportunities";
-
-export const fetchAllOpportunities = async () => {
-    const response = await apiClient.get(API_URL);
-    return response.data;
+const fetchAllOpportunities = async () => {
+    try {
+        const response = await apiClient.get("/v2/opportunities");
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching all opportunities:", error.response?.data || error);
+        throw error;
+    }
 };
 
-export const fetchOpportunityById = async (id) => {
-    const response = await apiClient.get(`${API_URL}/${id}`);
-    return response.data;
+const fetchOpportunitiesByCategory = async (category) => {
+    try {
+        const response = await apiClient.get(`/v2/opportunities/category/${category}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching opportunities by category ${category}:`, error.response?.data || error);
+        throw error;
+    }
 };
 
-export const fetchOpportunitiesByCategory = async (category) => {
-    const response = await apiClient.get(`${API_URL}/category/${category}`);
-    return response.data;
+const fetchOpportunityById = async (id) => {
+    try {
+        const response = await apiClient.get(`/v2/opportunities/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching opportunity by ID ${id}:`, error.response?.data || error);
+        throw error;
+    }
 };
 
-export const createOpportunity = async (opportunityData) => {
-    const response = await apiClient.post(`${API_URL}/create`, opportunityData);
-    return response.data;
+const fetchOpportunitiesByUser = async (userId) => {
+    try {
+        const response = await apiClient.get(`/v2/opportunities/user/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error fetching opportunities by user ${userId}:`, error.response?.data || error);
+        throw error;
+    }
+};
+
+const createOpportunity = async (opportunityData) => {
+    try {
+        const response = await apiClient.post("/v2/opportunities/create", opportunityData);
+        return response.data;
+    } catch (error) {
+        console.error("Error creating opportunity:", error.response?.data || error);
+        throw error;
+    }
+};
+
+const updateOpportunity = async (id, opportunityData) => {
+    try {
+        const response = await apiClient.patch(`/v2/opportunities/${id}/edit`, opportunityData);
+        return response.data;
+    } catch (error) {
+        console.error(`Error updating opportunity ${id}:`, error.response?.data || error);
+        throw error;
+    }
+};
+
+const deleteOpportunity = async (id) => {
+    try {
+        const response = await apiClient.delete(`/v2/opportunities/${id}/delete`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error deleting opportunity ${id}:`, error.response?.data || error);
+        throw error;
+    }
 };
 
 const opportunityService = {
     fetchAllOpportunities,
-    fetchOpportunityById,
     fetchOpportunitiesByCategory,
-    createOpportunity
+    fetchOpportunityById,
+    fetchOpportunitiesByUser,
+    createOpportunity,
+    updateOpportunity,
+    deleteOpportunity
 };
 
 export default opportunityService;
