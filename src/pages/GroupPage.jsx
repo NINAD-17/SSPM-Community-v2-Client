@@ -12,6 +12,7 @@ import CreateGroupPost from '../features/groups/components/CreateGroupPost';
 import GroupPostList from '../features/groups/components/GroupPostList';
 import GroupMemberList from '../features/groups/components/GroupMemberList';
 import GroupAdminList from '../features/groups/components/GroupAdminList';
+import GroupTabsNavigation from '../features/groups/components/GroupTabsNavigation';
 import Spinner from '../components/common/Spinner';
 import Layout from '../components/layout/Layout';
 import Footer from '../components/layout/Footer';
@@ -28,9 +29,10 @@ const GroupPage = () => {
             error 
         } 
     } = useSelector(state => state.groups);
-    console.log('group:', group, "\n", useSelector(state => state.groups));
+    
     const [showAdminsModal, setShowAdminsModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
+    const [mobileTab, setMobileTab] = useState(0); // 0: Posts, 1: Members
 
     useEffect(() => {
         if (groupId) {
@@ -64,9 +66,39 @@ const GroupPage = () => {
                     <GroupHeader group={group} />
                 </div>
 
+                {/* Mobile Tabs Navigation - Only Visible on Mobile */}
+                <div className="lg:hidden max-w-7xl mx-auto px-4 sm:px-6 mt-6">
+                    <GroupTabsNavigation 
+                        groupId={groupId} 
+                        activeTab={mobileTab} 
+                        onTabChange={setMobileTab} 
+                    />
+                </div>
+
                 {/* Main Content */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Mobile View Content */}
+                    <div className="lg:hidden">
+                        {mobileTab === 0 && (
+                            <div className="space-y-6">
+                                <GroupStats group={group} posts={posts} />
+                                {group?.isMember && (
+                                    <CreateGroupPost groupId={groupId} />
+                                )}
+                                <GroupPostList 
+                                    groupId={groupId}
+                                    posts={posts.items}
+                                    totalPosts={posts.totalCount}
+                                    lastPostId={posts.lastId}
+                                    allPostsFetched={posts.allFetched}
+                                    fetchCount={posts.fetchCount}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop View Content */}
+                    <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6">
                         {/* Left Sidebar */}
                         <div className="lg:col-span-3 space-y-6">
                             <GroupStats group={group} posts={posts} />
@@ -78,7 +110,7 @@ const GroupPage = () => {
                         {/* Main Feed */}
                         <div className="lg:col-span-6 space-y-6">
                             {group?.isMember && (
-                                <CreateGroupPost />
+                                <CreateGroupPost groupId={groupId} />
                             )}
                             <GroupPostList 
                                 groupId={groupId}
@@ -104,10 +136,10 @@ const GroupPage = () => {
                                     </button>
                                 </div>
                                 <div className="p-4">
-                                    {/* <GroupAdminList 
+                                    <GroupAdminList 
                                         groupId={groupId}
                                         preview={true}
-                                    /> */}
+                                    />
                                 </div>
                             </div>
 
@@ -123,10 +155,10 @@ const GroupPage = () => {
                                     </button>
                                 </div>
                                 <div className="p-4">
-                                    {/* <GroupMemberList 
+                                    <GroupMemberList 
                                         groupId={groupId}
                                         preview={true}
-                                    /> */}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -134,7 +166,7 @@ const GroupPage = () => {
                 </div>
 
                 {/* Modals */}
-                {/* <UserListModal
+                <UserListModal
                     isOpen={showAdminsModal}
                     onClose={() => setShowAdminsModal(false)}
                     title="Group Admins"
@@ -148,10 +180,10 @@ const GroupPage = () => {
                     title="Group Members"
                     groupId={groupId}
                     type="member"
-                /> */}
+                />
             </div>
         </Layout>
     );
 };
 
-export default GroupPage; 
+export default GroupPage;

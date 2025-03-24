@@ -1,42 +1,122 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import PropTypes from 'prop-types';
+import { loadGroupMembers } from '../groupsSlice';
+import Spinner from '../../../components/common/Spinner';
+import UserCard from './UserCard';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
-const GroupMemberList = ({ members = [], showAll = false, onShowAll }) => {
-    const navigate = useNavigate();
-    const displayMembers = showAll ? members : members.slice(0, 5);
+const GroupMemberList = ({ groupId, preview = false }) => {
+    const dispatch = useDispatch();
+    const { 
+        currentGroup: { 
+            members: { 
+                items, 
+                status, 
+                error, 
+                lastMemberId, 
+                fetchCount, 
+                allFetched 
+            } 
+        } 
+    } = useSelector(state => state.groups);
+    
+    const [hasMore, setHasMore] = useState(true);
+
+    useEffect(() => {
+        if (groupId && items.length === 0 && status !== 'loading') {
+            dispatch(loadGroupMembers({
+                groupId,
+                lastMemberId: null,
+                limit: preview ? 5 : 10,
+                fetchCount: 0
+            }));
+        }
+    }, [dispatch, groupId, items.length, status, preview]);
+
+    useEffect(() => {
+        setHasMore(!allFetched);
+    }, [allFetched]);
+
+    const fetchMoreMembers = () => {
+        if (allFetched || status === 'loading') return;
+        
+        dispatch(loadGroupMembers({
+            groupId,
+            lastMemberId,
+            limit: 10,
+            fetchCount: fetchCount + 1
+        }));
+    };
+
+    if (status === 'loading' && items.length === 0) {
+        return <div className="flex justify-center py-4"><Spinner size="medium" /></div>;
+    }
+
+    if (error) {
+        return <div className="text-red-500 text-center py-4">Error: {error}</div>;
+    }
+
+    if (items.length === 0) {
+        return <div className="text-gray-500 text-center py-4">No members found</div>;
+    }
+
+    // For preview mode, just show the first 5 members
+    const displayedMembers = preview ? items.slice(0, 5) : items;
 
     return (
-        <div className="space-y-2">
-            {displayMembers.map(member => (
-                <div 
-                    key={member._id}
-                    onClick={() => navigate(`/profile/${member._id}`)}
-                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
+        <div>
+            {!preview ? (
+                <InfiniteScroll
+                    dataLength={items.length}
+                    next={fetchMoreMembers}
+                    hasMore={hasMore}
+                    loader={<div className="flex justify-center py-4"><Spinner size="small" /></div>}
+                    endMessage={
+                        <p className="text-center text-gray-500 text-sm py-4">
+                            All members loaded
+                        </p>
+                    }
+                    className="space-y-3"
                 >
-                    <img
-                        src={member.avatar || "/default-avatar.png"}
-                        alt={`${member.firstName} ${member.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div>
-                        <h3 className="font-medium text-gray-900">
-                            {member.firstName} {member.lastName}
-                        </h3>
-                        <p className="text-sm text-gray-500">{member.headline || 'Member'}</p>
-                    </div>
+                    {displayedMembers.map(member => (
+                        <UserCard 
+                            key={member._id}
+                            user={{
+                                _id: member.userId,
+                                firstName: member.firstName,
+                                lastName: member.lastName,
+                                avatar: member.avatar,
+                                role: member.role
+                            }}
+                            role={member.role}
+                        />
+                    ))}
+                </InfiniteScroll>
+            ) : (
+                <div className="space-y-3">
+                    {displayedMembers.map(member => (
+                        <UserCard 
+                            key={member._id}
+                            user={{
+                                _id: member.userId,
+                                firstName: member.firstName,
+                                lastName: member.lastName,
+                                avatar: member.avatar,
+                                role: member.role
+                            }}
+                            role={member.role}
+                        />
+                    ))}
                 </div>
-            ))}
-            
-            {!showAll && members.length > 5 && (
-                <button
-                    onClick={onShowAll}
-                    className="w-full p-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium"
-                >
-                    Show all members ({members.length})
-                </button>
             )}
         </div>
     );
 };
 
-export default GroupMemberList; 
+GroupMemberList.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    preview: PropTypes.bool
+};
+
+export default GroupMemberList;

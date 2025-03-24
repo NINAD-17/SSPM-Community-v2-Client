@@ -8,19 +8,29 @@ import postNotFound from "../../../assets/postNotFound.png";
 import React from "react";
 
 // Create a forwarded ref version of GroupPostCard
-const GroupPostCardWithRef = React.forwardRef(({ post }, ref) => (
+const GroupPostCardWithRef = React.forwardRef(({ post, group }, ref) => (
     <div ref={ref}>
-        <GroupPostCard post={post} />
+        <GroupPostCard post={post} group={group} />
     </div>
 ));
 
 GroupPostCardWithRef.displayName = 'GroupPostCardWithRef';
 
-const GroupPostList = ({ groupId }) => {
+GroupPostCardWithRef.propTypes = {
+    post: PropTypes.object.isRequired,
+    group: PropTypes.object
+};
+
+const GroupPostList = ({ 
+    groupId, 
+    posts = [], 
+    totalPosts = 0, 
+    lastPostId = null, 
+    allPostsFetched = false, 
+    fetchCount = 0 
+}) => {
     const dispatch = useDispatch();
-    const { data: currentGroup, posts: postsData, status, error } = useSelector((state) => state.groups.currentGroup);
-    const { items: posts, totalCount, totalFetchedPosts, lastId: lastPostId, allFetched: allPostsFetched, fetchCount } = postsData;
-    console.log("GroupPostList: ", postsData);
+    const { data: currentGroup, status } = useSelector((state) => state.groups.currentGroup);
     
     const observer = useRef();
     
@@ -43,17 +53,12 @@ const GroupPostList = ({ groupId }) => {
     }, [lastPostId, allPostsFetched, status, dispatch, groupId, fetchCount]);
 
     useEffect(() => {
-        const params = { lastPostId: null, limit: 10, fetchCount: 0 };
-        if (groupId && !posts?.length) {
-            dispatch(loadGroupPosts({ groupId, ...params }));
-        }
-
         return () => {
             if (observer.current) {
                 observer.current.disconnect();
             }
         };
-    }, [dispatch, groupId]);
+    }, []);
 
     if (status === 'loading' && !posts?.length) {
         return <Spinner />;
@@ -78,7 +83,7 @@ const GroupPostList = ({ groupId }) => {
         <div className="space-y-4">
             {posts?.map((post, index) => {
                 if (posts.length === index + 1 && !allPostsFetched) {
-                    return <GroupPostCardWithRef ref={lastPostRef} key={post._id} post={post} />;
+                    return <GroupPostCardWithRef ref={lastPostRef} key={post._id} post={post} group={currentGroup} />;
                 }
                 return <GroupPostCard key={post._id} post={post} group={currentGroup} />;
             })}
@@ -99,7 +104,12 @@ const GroupPostList = ({ groupId }) => {
 };
 
 GroupPostList.propTypes = {
-    groupId: PropTypes.string.isRequired
+    groupId: PropTypes.string.isRequired,
+    posts: PropTypes.array,
+    totalPosts: PropTypes.number,
+    lastPostId: PropTypes.string,
+    allPostsFetched: PropTypes.bool,
+    fetchCount: PropTypes.number
 };
 
 export default GroupPostList; 

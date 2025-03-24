@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import PropTypes from "prop-types";
 import { createNewGroupPost } from "../groupsSlice";
 import { toast } from "sonner";
 import Dropzone from "../../../components/common/Dropzone";
@@ -22,7 +23,7 @@ const quillFormats = [
     'link'
 ];
 
-const CreateGroupPost = () => {
+const CreateGroupPost = ({ groupId }) => {
     const dispatch = useDispatch();    
     const user = useSelector((state) => state.user.user);
     const currentGroup = useSelector((state) => state.groups.currentGroup.data);
@@ -41,7 +42,7 @@ const CreateGroupPost = () => {
         setIsSubmitting(true);
         try {
             await dispatch(createNewGroupPost({
-                groupId: currentGroup._id,
+                groupId,
                 postData: {
                     content,
                     media: files,
@@ -191,6 +192,10 @@ const CreateGroupPost = () => {
             )}
         </div>
     );
+};
+
+CreateGroupPost.propTypes = {
+    groupId: PropTypes.string.isRequired
 };
 
 export default CreateGroupPost;

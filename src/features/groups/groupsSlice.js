@@ -21,18 +21,22 @@ const initialState = {
     currentGroup: {
         data: null,
         members: {
-            preview: [], // For sidebar
-            list: [], // For modal
+            items: [], // For both preview and modal
+            status: 'idle',
+            error: null,
             totalCount: 0,
-            lastId: null,
-            allFetched: false
+            lastMemberId: null,
+            allFetched: false,
+            fetchCount: 0
         },
         admins: {
-            preview: [], // For sidebar
-            list: [], // For modal
+            items: [], // For both preview and modal
+            status: 'idle',
+            error: null,
             totalCount: 0,
-            lastId: null,
-            allFetched: false
+            lastAdminId: null,
+            allFetched: false,
+            fetchCount: 0
         },
         posts: {
             items: [],
@@ -89,6 +93,30 @@ export const loadGroupPosts = createAsyncThunk(
             return response.data;
         } catch (error) {
             return rejectWithValue(error?.response?.data?.message || 'Failed to load group posts');
+        }
+    }
+);
+
+export const loadGroupMembers = createAsyncThunk(
+    'groups/loadGroupMembers',
+    async ({ groupId, lastMemberId = null, limit = 10, fetchCount = 0 }, { rejectWithValue }) => {
+        try {
+            const response = await fetchGroupMembers(groupId, lastMemberId, limit, fetchCount);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load group members');
+        }
+    }
+);
+
+export const loadGroupAdmins = createAsyncThunk(
+    'groups/loadGroupAdmins',
+    async ({ groupId, lastAdminId = null, limit = 10, fetchCount = 0 }, { rejectWithValue }) => {
+        try {
+            const response = await fetchGroupAdmins(groupId, lastAdminId, limit, fetchCount);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error?.response?.data?.message || 'Failed to load group admins');
         }
     }
 );
@@ -220,13 +248,65 @@ const groupsSlice = createSlice({
                 console.log('loadGroupDetails.fulfilled:', action.payload);
                 state.currentGroup.status = 'succeeded';
                 state.currentGroup.data = action.payload.group;
-                // state.currentGroup.members.preview = action.payload.previewMembers;
-                // state.currentGroup.admins.preview = action.payload.previewAdmins;
                 state.currentGroup.error = null;
             })
             .addCase(loadGroupDetails.rejected, (state, action) => {
                 state.currentGroup.status = 'failed';
                 state.currentGroup.error = action.payload;
+                toast.error(action.payload);
+            })
+
+            // Load Group Members
+            .addCase(loadGroupMembers.pending, (state) => {
+                state.currentGroup.members.status = 'loading';
+            })
+            .addCase(loadGroupMembers.fulfilled, (state, action) => {
+                console.log('loadGroupMembers.fulfilled:', action.payload);
+                const { members, totalMembers, lastMemberId, allMembersFetched, fetchCount } = action.payload;
+                
+                if (fetchCount === 0) {
+                    state.currentGroup.members.items = members;
+                } else {
+                    state.currentGroup.members.items = [...state.currentGroup.members.items, ...members];
+                }
+                
+                state.currentGroup.members.totalCount = totalMembers;
+                state.currentGroup.members.lastMemberId = lastMemberId;
+                state.currentGroup.members.allFetched = allMembersFetched;
+                state.currentGroup.members.fetchCount = fetchCount;
+                state.currentGroup.members.status = 'succeeded';
+                state.currentGroup.members.error = null;
+            })
+            .addCase(loadGroupMembers.rejected, (state, action) => {
+                state.currentGroup.members.status = 'failed';
+                state.currentGroup.members.error = action.payload;
+                toast.error(action.payload);
+            })
+            
+            // Load Group Admins
+            .addCase(loadGroupAdmins.pending, (state) => {
+                state.currentGroup.admins.status = 'loading';
+            })
+            .addCase(loadGroupAdmins.fulfilled, (state, action) => {
+                console.log('loadGroupAdmins.fulfilled:', action.payload);
+                const { admins, totalAdmins, lastAdminId, allAdminsFetched, fetchCount } = action.payload;
+                
+                if (fetchCount === 0) {
+                    state.currentGroup.admins.items = admins;
+                } else {
+                    state.currentGroup.admins.items = [...state.currentGroup.admins.items, ...admins];
+                }
+                
+                state.currentGroup.admins.totalCount = totalAdmins;
+                state.currentGroup.admins.lastAdminId = lastAdminId;
+                state.currentGroup.admins.allFetched = allAdminsFetched;
+                state.currentGroup.admins.fetchCount = fetchCount;
+                state.currentGroup.admins.status = 'succeeded';
+                state.currentGroup.admins.error = null;
+            })
+            .addCase(loadGroupAdmins.rejected, (state, action) => {
+                state.currentGroup.admins.status = 'failed';
+                state.currentGroup.admins.error = action.payload;
                 toast.error(action.payload);
             })
 

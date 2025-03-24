@@ -1,42 +1,122 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import PropTypes from 'prop-types';
+import { loadGroupAdmins } from '../groupsSlice';
+import Spinner from '../../../components/common/Spinner';
+import UserCard from './UserCard';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
-const GroupAdminList = ({ admins = [], showAll = false, onShowAll }) => {
-    const navigate = useNavigate();
-    const displayAdmins = showAll ? admins : admins.slice(0, 3);
+const GroupAdminList = ({ groupId, preview = false }) => {
+    const dispatch = useDispatch();
+    const { 
+        currentGroup: { 
+            admins: { 
+                items, 
+                status, 
+                error, 
+                lastAdminId, 
+                fetchCount, 
+                allFetched 
+            } 
+        } 
+    } = useSelector(state => state.groups);
+    
+    const [hasMore, setHasMore] = useState(true);
+
+    useEffect(() => {
+        if (groupId && items.length === 0 && status !== 'loading') {
+            dispatch(loadGroupAdmins({
+                groupId,
+                lastAdminId: null,
+                limit: preview ? 5 : 10,
+                fetchCount: 0
+            }));
+        }
+    }, [dispatch, groupId, items.length, status, preview]);
+
+    useEffect(() => {
+        setHasMore(!allFetched);
+    }, [allFetched]);
+
+    const fetchMoreAdmins = () => {
+        if (allFetched || status === 'loading') return;
+        
+        dispatch(loadGroupAdmins({
+            groupId,
+            lastAdminId,
+            limit: 10,
+            fetchCount: fetchCount + 1
+        }));
+    };
+
+    if (status === 'loading' && items.length === 0) {
+        return <div className="flex justify-center py-4"><Spinner size="medium" /></div>;
+    }
+
+    if (error) {
+        return <div className="text-red-500 text-center py-4">Error: {error}</div>;
+    }
+
+    if (items.length === 0) {
+        return <div className="text-gray-500 text-center py-4">No admins found</div>;
+    }
+
+    // For preview mode, just show the first 5 admins
+    const displayedAdmins = preview ? items.slice(0, 5) : items;
 
     return (
-        <div className="space-y-2">
-            {displayAdmins.map(admin => (
-                <div 
-                    key={admin._id}
-                    onClick={() => navigate(`/profile/${admin._id}`)}
-                    className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
+        <div>
+            {!preview ? (
+                <InfiniteScroll
+                    dataLength={items.length}
+                    next={fetchMoreAdmins}
+                    hasMore={hasMore}
+                    loader={<div className="flex justify-center py-4"><Spinner size="small" /></div>}
+                    endMessage={
+                        <p className="text-center text-gray-500 text-sm py-4">
+                            All admins loaded
+                        </p>
+                    }
+                    className="space-y-3"
                 >
-                    <img
-                        src={admin.avatar || "/default-avatar.png"}
-                        alt={`${admin.firstName} ${admin.lastName}`}
-                        className="w-10 h-10 rounded-full object-cover"
-                    />
-                    <div>
-                        <h3 className="font-medium text-gray-900">
-                            {admin.firstName} {admin.lastName}
-                        </h3>
-                        <p className="text-sm text-blue-600">Group Admin</p>
-                    </div>
+                    {displayedAdmins.map(admin => (
+                        <UserCard 
+                            key={admin._id}
+                            user={{
+                                _id: admin.userId,
+                                firstName: admin.firstName,
+                                lastName: admin.lastName,
+                                avatar: admin.avatar,
+                                role: admin.role
+                            }}
+                            role="admin"
+                        />
+                    ))}
+                </InfiniteScroll>
+            ) : (
+                <div className="space-y-3">
+                    {displayedAdmins.map(admin => (
+                        <UserCard 
+                            key={admin._id}
+                            user={{
+                                _id: admin.userId,
+                                firstName: admin.firstName,
+                                lastName: admin.lastName,
+                                avatar: admin.avatar,
+                                role: admin.role
+                            }}
+                            role="admin"
+                        />
+                    ))}
                 </div>
-            ))}
-            
-            {!showAll && admins.length > 3 && (
-                <button
-                    onClick={onShowAll}
-                    className="w-full p-2 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium"
-                >
-                    Show all admins ({admins.length})
-                </button>
             )}
         </div>
     );
 };
 
-export default GroupAdminList; 
+GroupAdminList.propTypes = {
+    groupId: PropTypes.string.isRequired,
+    preview: PropTypes.bool
+};
+
+export default GroupAdminList;

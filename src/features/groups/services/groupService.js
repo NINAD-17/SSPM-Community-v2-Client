@@ -99,10 +99,17 @@ export const fetchGroupDetails = async (groupId) => {
     }
 };
 
-export const fetchGroupMembers = async (groupId) => {
+export const fetchGroupMembers = async (groupId, lastMemberId = null, limit = 10, fetchCount = 0, sortBy = 'createdAt', sortType = 'desc') => {
     try {
+        const params = new URLSearchParams();
+        if (lastMemberId) params.append("lastMemberId", lastMemberId);
+        if (limit) params.append("limit", limit);
+        if (fetchCount) params.append("fetchCount", fetchCount);
+        if (sortBy) params.append("sortBy", sortBy);
+        if (sortType) params.append("sortType", sortType);
+
         const response = await apiClient.get(
-            `${API_URL_GROUPS}/${groupId}/members`
+            `${API_URL_GROUPS}/${groupId}/members${params.toString() ? `?${params.toString()}` : ""}`
         );
         return response.data;
     } catch (error) {
@@ -111,10 +118,17 @@ export const fetchGroupMembers = async (groupId) => {
     }
 };
 
-export const fetchGroupAdmins = async (groupId) => {
+export const fetchGroupAdmins = async (groupId, lastAdminId = null, limit = 10, fetchCount = 0, sortBy = 'createdAt', sortType = 'desc') => {
     try {
+        const params = new URLSearchParams();
+        if (lastAdminId) params.append("lastAdminId", lastAdminId);
+        if (limit) params.append("limit", limit);
+        if (fetchCount) params.append("fetchCount", fetchCount);
+        if (sortBy) params.append("sortBy", sortBy);
+        if (sortType) params.append("sortType", sortType);
+
         const response = await apiClient.get(
-            `${API_URL_GROUPS}/${groupId}/admins`
+            `${API_URL_GROUPS}/${groupId}/admins${params.toString() ? `?${params.toString()}` : ""}`
         );
         return response.data;
     } catch (error) {
@@ -152,7 +166,7 @@ export const fetchGroupPosts = async (groupId, lastPostId = null, limit, fetchCo
         if (lastPostId) params.append("lastPostId", lastPostId);
 
         const response = await apiClient.get(
-            `${API_URL_GROUP_POSTS}/group/${groupId}/all${params ? `?${params}` : ""}`
+            `${API_URL_GROUP_POSTS}/group/${groupId}/all${params.toString() ? `?${params.toString()}` : ""}`
         );
         return response.data;
     } catch (error) {
@@ -194,15 +208,15 @@ export const createGroupPost = async (groupId, postData) => {
     }
 };
 
-export const updateGroupPost = async (groupId, postData) => {
+export const updateGroupPost = async (groupId, postId, postData) => {
         try {
                 const formData = new FormData();
-                formData.append("content", postData.Content);
+                formData.append("content", postData.content);
                 if (postData.media) {
                     postData.media.forEach((file) => formData.append("media", file));
                 }
-                const response = await apiClient.post(
-                    `${API_URL_GROUP_POSTS}/group/${groupId}/post/${postData._id}/update`,
+                const response = await apiClient.patch(
+                    `${API_URL_GROUP_POSTS}/group/${groupId}/post/${postId}/update`,
                     formData,
                     {
                         headers: {
@@ -212,7 +226,7 @@ export const updateGroupPost = async (groupId, postData) => {
                 );
                 return response.data;
             } catch (error) {
-                console.error("Error creating group post: ", error);
+                console.error("Error updating group post: ", error);
                 throw error;
             }
 }
