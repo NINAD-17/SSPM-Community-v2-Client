@@ -45,8 +45,13 @@ export const logoutUser = async () => {
 };
 
 export const verifyAndFetchTokenUser = async () => {
-    const response = await apiClient.get(`${API_URL}/user`);
-    return response.data;
+    try {
+        const response = await apiClient.get(`${API_URL}/user`);
+        return response.data;
+    } catch (error) {
+        console.log({error});
+        throw error;
+    }
 };
 
 export const refreshAccessToken = async () => {

@@ -111,7 +111,8 @@ export const fetchUserInfo = createAsyncThunk(
             dispatch(setUser(response.data.user));
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || 'Failed to fetch user info');
+            console.log(error)
+            return rejectWithValue(error || 'Failed to fetch user info');
         }
     }
 );

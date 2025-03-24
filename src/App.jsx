@@ -31,10 +31,11 @@ function App() {
             await dispatch(fetchUserInfo()).unwrap();
         } catch (error) {
             // Handle token expiration
-            console.log({error});
+            console.log(error);
             alert("User Fetch On Startup Failed: (trying to refresh token in case of expiration)");
 
             const statusCode = error?.response?.status;
+            console.log({statusCode})
             if (statusCode === 401) {
                 try {
                     // Try to refresh the access token

@@ -16,6 +16,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
     (config) => {
         // You can modify the request config if needed
+        console.log({config})
         return config;
     },
     (error) => {

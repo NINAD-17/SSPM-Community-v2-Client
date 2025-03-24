@@ -7,10 +7,12 @@ import {
     loadFollowers, 
     loadFollowings,
     loadPendingConnections,
+    loadInvitationsSent,
     selectConnections,
     selectFollowers,
     selectFollowings,
-    selectPendingConnections
+    selectPendingConnections,
+    selectInvitationsSent
 } from "../features/userNetwork/userNetworkSlice";
 
 const UserNetwork = () => {
@@ -23,15 +25,17 @@ const UserNetwork = () => {
     const followers = useSelector(selectFollowers);
     const followings = useSelector(selectFollowings);
     const pendingRequests = useSelector(selectPendingConnections);
+    const invitationsSent = useSelector(selectInvitationsSent);
 
     const user = useSelector(state => state.user.user);
 
     useEffect(() => {
         if (user?._id) {
-            dispatch(loadConnections(user._id));
+            dispatch(loadConnections());
             dispatch(loadFollowers(user._id));
             dispatch(loadFollowings(user._id));
             dispatch(loadPendingConnections());
+            dispatch(loadInvitationsSent());
         }
     }, [dispatch, user?._id]);
 
@@ -60,25 +64,33 @@ const UserNetwork = () => {
             count: pendingRequests.data.length,
             status: pendingRequests.status 
         },
+        { 
+            name: "Invitations Sent", 
+            icon: "📤", 
+            count: invitationsSent.data.length,
+            status: invitationsSent.status 
+        },
     ];
 
     const filterUsers = (users, query) => {
         if (!Array.isArray(users)) return [];
+        if (!query) return users;
         
         return users.filter(item => {
-            const user = item.recipient || item.requester || item;
+            // Handle different data structures
+            const userData = item.user || item.requester || item.recipient || item;
             const searchString = query.toLowerCase();
             
             return (
-                user.firstName?.toLowerCase().includes(searchString) ||
-                user.lastName?.toLowerCase().includes(searchString) ||
-                user.headline?.toLowerCase().includes(searchString) ||
-                user.currentlyWorkingAt?.toLowerCase().includes(searchString)
+                userData.firstName?.toLowerCase().includes(searchString) ||
+                userData.lastName?.toLowerCase().includes(searchString) ||
+                userData.headline?.toLowerCase().includes(searchString) ||
+                userData.currentlyWorkingAt?.toLowerCase().includes(searchString)
             );
         });
     };
 
-    const getCategoryData = () => {
+    const getCurrentCategoryData = () => {
         switch (selectedCategory) {
             case "Connections":
                 return {
@@ -100,14 +112,17 @@ const UserNetwork = () => {
                     ...pendingRequests,
                     data: filterUsers(pendingRequests.data, searchQuery)
                 };
+            case "Invitations Sent":
+                return {
+                    ...invitationsSent,
+                    data: filterUsers(invitationsSent.data, searchQuery)
+                };
             default:
                 return { data: [], status: 'idle', error: null };
         }
     };
-
-    const currentCategory = getCategoryData();
-    console.log("current category return data: ", currentCategory);
-    console.log("data: ", connections.data);
+    
+    const currentCategory = getCurrentCategoryData();
 
     const handleCategoryClick = (category) => {
         setSelectedCategory(category);
@@ -220,17 +235,18 @@ const UserNetwork = () => {
                                         {currentCategory.error}
                                     </div>
                                 ) : currentCategory.data.length > 0 ? (
-                                    currentCategory.data.map((user) => (
+                                    currentCategory.data.map((item) => (
                                         <UserCard
-                                            key={user._id}
-                                            user={user}
+                                            key={item._id}
+                                            userData={item}
                                             type={selectedCategory}
+                                            dispatch={dispatch}
+                                            currentUserId={user?._id}
                                         />
                                     ))
                                 ) : (
                                     <div className="text-center py-8 text-gray-500">
-                                        No {selectedCategory.toLowerCase()}{" "}
-                                        found
+                                        No {selectedCategory.toLowerCase()} found
                                     </div>
                                 )}
                             </div>
