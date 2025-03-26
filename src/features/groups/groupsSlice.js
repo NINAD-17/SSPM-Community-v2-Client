@@ -150,7 +150,7 @@ export const removeGroupPost = createAsyncThunk(
     'groups/removeGroupPost',
     async ({ postId, groupId }, { rejectWithValue }) => {
         try {
-            const response = await deleteGroupPost(postId, groupId);
+            await deleteGroupPost(postId, groupId);
             return { postId, groupId };
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to delete post");
@@ -189,7 +189,14 @@ export const loadAllGroups = createAsyncThunk(
     async ({ lastId = null, limit = 10, search = '', fetchCount = 0 }, { rejectWithValue }) => {
         try {
             const response = await fetchAllGroups(lastId, limit, search);
-            return { ...response.data, fetchCount, search };
+            console.log("Loaded Groups in slice: ", response.data)
+            return { 
+                groups: response.data.allGroups || [], 
+                totalCount: response.data.totalGroups || 0,
+                hasMore: response.data.totalGroups > (response.data.allGroups || []).length,
+                fetchCount, 
+                search 
+            };
         } catch (error) {
             return rejectWithValue(error?.response?.data?.message || 'Failed to load groups');
         }
@@ -213,8 +220,19 @@ export const loadRecommendedGroups = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await fetchRecommendedGroups();
-            return response.data;
+            console.log('Recommendations response in thunk:', response.data);
+            
+            // Handle potential structure differences more safely
+            if (response.data && response.data.recommendations) {
+                return response.data.recommendations || [];
+            } else if (Array.isArray(response.data)) {
+                return response.data;
+            } else {
+                console.warn('Unexpected recommendations data structure:', response);
+                return [];
+            }
         } catch (error) {
+            console.error('Error in loadRecommendedGroups thunk:', error);
             return rejectWithValue(error?.response?.data?.message || 'Failed to load recommendations');
         }
     }
@@ -415,6 +433,9 @@ const groupsSlice = createSlice({
             })
 
             // Groups List Page
+            .addCase(loadAllGroups.pending, (state) => {
+                state.groupsList.status = 'loading';
+            })
             .addCase(loadAllGroups.fulfilled, (state, action) => {
                 const { groups, totalCount, hasMore, fetchCount, search } = action.payload;
                 
@@ -425,11 +446,16 @@ const groupsSlice = createSlice({
                 }
                 
                 state.groupsList.all.totalCount = totalCount;
-                state.groupsList.all.lastId = groups[groups.length - 1]?._id;
+                state.groupsList.all.lastId = groups.length > 0 ? groups[groups.length - 1]?._id : null;
                 state.groupsList.all.allFetched = !hasMore;
                 state.groupsList.all.fetchCount = fetchCount;
                 state.groupsList.all.searchQuery = search;
                 state.groupsList.status = 'succeeded';
+                state.groupsList.error = null;
+            })
+            .addCase(loadAllGroups.rejected, (state, action) => {
+                state.groupsList.status = 'failed';
+                state.groupsList.error = action.payload;
             })
 
             .addCase(loadUserJoinedGroups.fulfilled, (state, action) => {
@@ -447,8 +473,17 @@ const groupsSlice = createSlice({
                 state.groupsList.joined.fetchCount = fetchCount;
             })
 
+            .addCase(loadRecommendedGroups.pending, (state) => {
+                state.groupsList.status = 'loading';
+            })
             .addCase(loadRecommendedGroups.fulfilled, (state, action) => {
                 state.groupsList.recommended = action.payload;
+                state.groupsList.status = 'succeeded';
+                state.groupsList.error = null;
+            })
+            .addCase(loadRecommendedGroups.rejected, (state, action) => {
+                state.groupsList.status = 'failed';
+                state.groupsList.error = action.payload;
             });
     }
 });

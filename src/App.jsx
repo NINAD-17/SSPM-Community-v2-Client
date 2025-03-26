@@ -13,7 +13,8 @@ import { Toaster } from 'sonner';
 import EditProfile from "./features/user/components/EditProfile";
 import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
-import GroupPage from "./pages/groupPage";
+import GroupPage from "./pages/GroupPage";
+import AllGroupsPage from "./pages/AllGroupsPage";
 import OpportunityPage from "./pages/OpportunityPage";
 import SinglePostPage from './pages/SinglePostPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -140,6 +141,14 @@ function App() {
                             </ProtectedRoute>
                         }
                     /> */}
+                    <Route
+                        path="/groups"
+                        element={
+                            <ProtectedRoute>
+                                <AllGroupsPage />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route
                         path="/groups/:groupId"
                         element={
