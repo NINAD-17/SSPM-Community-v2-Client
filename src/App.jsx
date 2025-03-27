@@ -33,7 +33,7 @@ function App() {
         } catch (error) {
             // Handle token expiration
             console.log(error);
-            alert("User Fetch On Startup Failed: (trying to refresh token in case of expiration)");
+            console.log("User Fetch On Startup Failed: (trying to refresh token in case of expiration)");
 
             const statusCode = error?.response?.status;
             console.log({statusCode})
@@ -42,18 +42,18 @@ function App() {
                     // Try to refresh the access token
                     await refreshAccessToken();
                     console.log("Access token refreshed");
-                    alert("Access token refreshed");
+                    console.log("Access token refreshed");
                     
                     // If successful, try fetching user info again
                     await dispatch(fetchUserInfo()).unwrap();
                 } catch (refreshError) {
                     // If refresh fails, user needs to login again
                     console.error("Authentication failed", refreshError);
-                    alert("Authentication failed" + refreshError);
+                    console.log("Authentication failed" + refreshError);
                 }
             } else {
                 console.error("An unexpected error occurred:", error);
-                alert("An unexpected error occurred. Please try again.");
+                console.log("An unexpected error occurred. Please try again.");
             }
         }
     }, [dispatch]); // dispatch is stable and won't cause infinite loops
