@@ -19,6 +19,7 @@ import OpportunityPage from "./pages/OpportunityPage";
 import SinglePostPage from './pages/SinglePostPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MessagingPage from "./pages/MessagingPage";
+import AdminDashboard from "./pages/AdminDashboard";
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -178,6 +179,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <MessagingPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin-dashboard"
+                        element={
+                            <ProtectedRoute>
+                                <AdminDashboard />
                             </ProtectedRoute>
                         }
                     />

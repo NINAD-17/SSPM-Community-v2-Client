@@ -2,8 +2,8 @@ import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import defaultAvatar from "../../../assets/user.png";
-import {
-    acceptConnectionRequest,
+import { 
+    acceptConnectionRequest, 
     rejectConnectionRequest,
     removeUserConnection,
     toggleFollowButton,
@@ -26,7 +26,7 @@ const UserCard = ({ userData, type, dispatch, currentUserId }) => {
                 return userData
             case "Following":
                 return userData
-            default:
+                default:
                 return userData;
         }
     };
@@ -140,7 +140,7 @@ const UserCard = ({ userData, type, dispatch, currentUserId }) => {
 
             <div className="flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                    <div>
+                <div>
                         <Link
                             to={`/user/profile/${userId}`}
                             className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
@@ -152,25 +152,25 @@ const UserCard = ({ userData, type, dispatch, currentUserId }) => {
                                 user.currentlyWorkingAt ||
                                 "SSPM Community Member"}
                         </p>
-                    </div>
+            </div>
 
                     <div className="mt-2 sm:mt-0 flex flex-wrap gap-2">
-                        {type === "Pending Requests" && (
-                            <>
-                                <button
+                {type === "Pending Requests" && (
+                    <>
+                        <button 
                                     onClick={handleAcceptRequest}
                                     className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
-                                >
+                        >
                                     Accept
-                                </button>
-                                <button
+                        </button>
+                        <button 
                                     onClick={handleRejectRequest}
                                     className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md transition-colors"
-                                >
+                        >
                                     Ignore
-                                </button>
-                            </>
-                        )}
+                        </button>
+                    </>
+                )}
 
                         {type === "Invitations Sent" && (
                             <button
@@ -191,22 +191,22 @@ const UserCard = ({ userData, type, dispatch, currentUserId }) => {
                         )}
 
                         {type === "Followers" && !isCurrentUser && (
-                            <button
+                    <button 
                                 onClick={handleRemoveFollower}
                                 className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md transition-colors"
-                            >
+                    >
                                 Remove
-                            </button>
-                        )}
+                    </button>
+                )}
 
                         {type === "Following" && !isCurrentUser && (
-                            <button
+                    <button 
                                 onClick={handleToggleFollow}
                                 className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-colors"
-                            >
+                    >
                                 Unfollow
-                            </button>
-                        )}
+                    </button>
+                )}
 
                         {!isCurrentUser && type !== "Invitations Sent" && (
                             <Link
