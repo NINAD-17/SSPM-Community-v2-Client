@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { logout } from "../../features/auth/authSlice";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import defaultAvatar from "../../assets/user.png";
 function Navbar() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const searchInputRef = useRef(null);
@@ -42,42 +43,54 @@ function Navbar() {
         }
     };
 
-    // Updated SearchInput component with icon+label style for medium screens
-    const SearchInput = ({ className = "", showLabel = false }) => (
-        <form onSubmit={handleSearch} className={`relative ${className}`}>
-            <div className={`${showLabel ? 'flex flex-col items-center' : ''}`}>
-                <div className="relative w-full">
-                    <input
-                        ref={searchInputRef}
-                        className="w-full p-2 pl-10 pr-12 rounded-xl border border-blue-200 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
-                        type="text"
-                        placeholder="Search..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400">
-                        search
-                    </span>
-                    {isSearchOpen && (
-                        <button
-                            type="button"
-                            onClick={() => setIsSearchOpen(false)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 hover:text-gray-600"
-                        >
-                            close
-                        </button>
-                    )}
-                </div>
-                {showLabel && (
-                    <h3 className="text-xs xl:text-sm mt-0.5 text-blue-800">Search</h3>
+    // Close search on cancel
+    const handleSearchCancel = () => {
+        setIsSearchOpen(false);
+        setSearchQuery("");
+    };
+
+    const SearchInput = ({ showLabel = true }) => (
+        <form onSubmit={handleSearch} className="w-full">
+            <div className="relative">
+                <input
+                    ref={isSearchOpen ? searchInputRef : null}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search..."
+                    className="w-full py-2 pl-10 pr-4 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 material-symbols-outlined">
+                    search
+                </span>
+                {isSearchOpen && (
+                    <button
+                        type="button"
+                        onClick={handleSearchCancel}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
                 )}
             </div>
+            {showLabel && (
+                <label className="text-xs text-gray-500 mt-1 block text-center">
+                    {isSearchOpen && "Press Enter to search"}
+                </label>
+            )}
         </form>
     );
 
-    const NavigationItem = ({ icon, label, onClick, isActive }) => (
+    const isPathActive = (path) => {
+        if (path === '/home') {
+            return location.pathname === '/home';
+        }
+        return location.pathname.startsWith(path);
+    };
+
+    const NavigationItem = ({ icon, label, path, isActive }) => (
         <li 
-            onClick={onClick}
+            onClick={() => navigate(path)}
             className={`cursor-pointer flex flex-col items-center transition-colors ${
                 isActive ? 'text-blue-600' : 'text-blue-800 hover:text-blue-400'
             }`}
@@ -130,14 +143,34 @@ function Navbar() {
                     {/* Desktop Navigation */}
                     <ul className="hidden sm:flex items-center space-x-6">
                         <NavigationItem 
-                            icon="notifications" 
-                            label="Notifications"
-                            onClick={() => navigate("/notifications")}
+                            icon="home" 
+                            label="Home"
+                            path="/home"
+                            isActive={isPathActive('/home')}
+                        />
+                        <NavigationItem 
+                            icon="group" 
+                            label="Groups"
+                            path="/groups"
+                            isActive={isPathActive('/groups')}
+                        />
+                        <NavigationItem 
+                            icon="chat" 
+                            label="Messages"
+                            path="/messages"
+                            isActive={isPathActive('/messages')}
                         />
                         <NavigationItem 
                             icon="work" 
-                            label="Opportunities"
-                            onClick={() => navigate("/opportunities")}
+                            label="Jobs"
+                            path="/opportunities"
+                            isActive={isPathActive('/opportunities')}
+                        />
+                        <NavigationItem 
+                            icon="notifications" 
+                            label="Alerts"
+                            path="/notifications"
+                            isActive={isPathActive('/notifications')}
                         />
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger className="outline-none">
@@ -234,6 +267,24 @@ function Navbar() {
                                     >
                                         <span className="material-symbols-outlined mr-3">group</span>
                                         My Network
+                                    </button>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item className="outline-none">
+                                    <button
+                                        onClick={() => navigate("/groups")}
+                                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-blue-50 flex items-center"
+                                    >
+                                        <span className="material-symbols-outlined mr-3">groups</span>
+                                        Groups
+                                    </button>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item className="outline-none">
+                                    <button
+                                        onClick={() => navigate("/messages")}
+                                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-blue-50 flex items-center"
+                                    >
+                                        <span className="material-symbols-outlined mr-3">chat</span>
+                                        Messages
                                     </button>
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item className="outline-none">

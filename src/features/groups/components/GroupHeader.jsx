@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 
 const GroupHeader = ({ group }) => {
+    const defaultAvatar = new URL('/src/assets/group-default.jpg', import.meta.url).href;
+    const defaultCover = new URL('/src/assets/group-cover-default.jpg', import.meta.url).href;
+
     const dispatch = useDispatch();
     const { user } = useSelector(state => state.user);
     const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +36,7 @@ const GroupHeader = ({ group }) => {
             {/* Cover Image */}
             <div className="h-32 sm:h-48 w-full relative">
                 <img
-                    src={group.coverImg || "/default-cover.png"}
+                    src={group.coverImg || defaultCover}
                     alt="cover"
                     className="w-full h-full object-cover"
                 />
@@ -41,7 +44,7 @@ const GroupHeader = ({ group }) => {
                 {/* Group Avatar Overlay */}
                 <div className="absolute -bottom-6 left-4 sm:left-6 border-4 border-white rounded-xl shadow-lg">
                     <img
-                        src={group.avatarImg || "/default-group.png"}
+                        src={group.avatarImg || defaultAvatar}
                         alt={group.name}
                         className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl object-cover"
                     />
