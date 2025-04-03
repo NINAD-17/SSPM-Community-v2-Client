@@ -9,17 +9,20 @@ import RegisterPage from "./pages/RegisterPage";
 import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import PublicRoute from "./components/common/PublicRoute";
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 import EditProfile from "./features/user/components/EditProfile";
 import ProfilePage from "./pages/ProfilePage";
 import UserNetwork from "./pages/UserNetwork";
 import GroupPage from "./pages/GroupPage";
 import AllGroupsPage from "./pages/AllGroupsPage";
 import OpportunityPage from "./pages/OpportunityPage";
-import SinglePostPage from './pages/SinglePostPage';
-import NotFoundPage from './pages/NotFoundPage';
+import SinglePostPage from "./pages/SinglePostPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import MessagingPage from "./pages/MessagingPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import EventsPage from "./pages/EventsPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import EventCategoryPage from "./pages/EventCategoryPage";
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -34,17 +37,19 @@ function App() {
         } catch (error) {
             // Handle token expiration
             console.log(error);
-            console.log("User Fetch On Startup Failed: (trying to refresh token in case of expiration)");
+            console.log(
+                "User Fetch On Startup Failed: (trying to refresh token in case of expiration)"
+            );
 
             const statusCode = error?.response?.status;
-            console.log({statusCode})
+            console.log({ statusCode });
             if (statusCode === 401) {
                 try {
                     // Try to refresh the access token
                     await refreshAccessToken();
                     console.log("Access token refreshed");
                     console.log("Access token refreshed");
-                    
+
                     // If successful, try fetching user info again
                     await dispatch(fetchUserInfo()).unwrap();
                 } catch (refreshError) {
@@ -70,7 +75,6 @@ function App() {
             </div>
         );
     }
-
 
     return (
         <>
@@ -191,16 +195,41 @@ function App() {
                         }
                     />
 
-                    {/* Not Found Route - should be last */}
-                    <Route 
-                        path="/not-found" 
-                        element={<NotFoundPage />} 
+                    {/* Events Routes */}
+                    <Route
+                        path="/events"
+                        element={
+                            <PublicRoute>
+                                <EventsPage />
+                            </PublicRoute>
+                        }
                     />
-                    
+
+                    <Route
+                        path="/events/category/:categoryType"
+                        element={
+                            <PublicRoute>
+                                <EventCategoryPage />
+                            </PublicRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/events/:eventId"
+                        element={
+                            <PublicRoute>
+                                <EventDetailPage />
+                            </PublicRoute>
+                        }
+                    />
+
+                    {/* Not Found Route - should be last */}
+                    <Route path="/not-found" element={<NotFoundPage />} />
+
                     {/* Catch all invalid routes */}
-                    <Route 
-                        path="*" 
-                        element={<Navigate to="/not-found" replace />} 
+                    <Route
+                        path="*"
+                        element={<Navigate to="/not-found" replace />}
                     />
                 </Routes>
             </BrowserRouter>
