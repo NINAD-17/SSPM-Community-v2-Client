@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Set default base URL
 const apiClient = axios.create({
-    baseURL: "http://localhost:8000/api",
+    baseURL: import.meta.env.VITE_API_BASE_URL ||"http://localhost:8000/api",
     withCredentials: true, // Important for cookies
     headers: {
         'Content-Type': 'application/json',
