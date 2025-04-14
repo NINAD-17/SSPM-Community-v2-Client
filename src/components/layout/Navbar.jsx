@@ -149,6 +149,12 @@ function Navbar() {
                             isActive={isPathActive('/home')}
                         />
                         <NavigationItem 
+                            icon="event" 
+                            label="Events"
+                            path="/events"
+                            isActive={isPathActive('/events')}
+                        />
+                        <NavigationItem 
                             icon="group" 
                             label="Groups"
                             path="/groups"
@@ -204,6 +210,14 @@ function Navbar() {
                                                 </button>
                                             </DropdownMenu.Item>
                                     }
+                                    <DropdownMenu.Item className="outline-none">
+                                        <button
+                                            onClick={() => navigate("/events/manage")}
+                                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 cursor-pointer"
+                                        >
+                                            Manage Events
+                                        </button>
+                                    </DropdownMenu.Item>
                                     <DropdownMenu.Item className="outline-none">
                                         <button
                                             onClick={() => navigate("/user/network")}

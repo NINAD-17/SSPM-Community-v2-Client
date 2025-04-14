@@ -23,6 +23,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import EventsPage from "./pages/EventsPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import EventCategoryPage from "./pages/EventCategoryPage";
+import ManageEventsPage from "./pages/ManageEventsPage";
 // import GroupsPage from "./pages/GroupsPage";
 
 function App() {
@@ -199,27 +200,36 @@ function App() {
                     <Route
                         path="/events"
                         element={
-                            <PublicRoute>
+                            <ProtectedRoute>
                                 <EventsPage />
-                            </PublicRoute>
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/events/manage"
+                        element={
+                            <ProtectedRoute>
+                                <ManageEventsPage />
+                            </ProtectedRoute>
                         }
                     />
 
                     <Route
                         path="/events/category/:categoryType"
                         element={
-                            <PublicRoute>
+                            <ProtectedRoute>
                                 <EventCategoryPage />
-                            </PublicRoute>
+                            </ProtectedRoute>
                         }
                     />
 
                     <Route
                         path="/events/:eventId"
                         element={
-                            <PublicRoute>
+                            <ProtectedRoute>
                                 <EventDetailPage />
-                            </PublicRoute>
+                            </ProtectedRoute>
                         }
                     />
 
